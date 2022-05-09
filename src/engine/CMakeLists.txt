@@ -41,11 +41,13 @@ set(SOURCES
         solver/unsat.cpp
         solver/widen.cpp
 
-        proof/common.cpp
-        proof/api.cpp
-        proof/cmd.cpp
-        proof/macro.cpp
-        proof/stmt.cpp
+        prover/cmd.cpp
+        prover/default.cpp
+        prover/dispatch.cpp
+        prover/macro.cpp
+        prover/prog.cpp
+        prover/prover.cpp
+        prover/stmt.cpp
 
         util/collect.cpp
         util/effects.cpp
@@ -56,7 +58,6 @@ set(SOURCES
         util/stack.cpp
         util/symbolic.cpp
 
-        linearizability.cpp
         static.cpp
 )
 

@@ -73,6 +73,11 @@ namespace plankton {
     }
 
     template<typename T>
+    static inline bool NonNull(const T& object) {
+        return !!object;
+    }
+
+    template<typename T>
     static inline bool AllNonNull(const T& container) {
         return plankton::All(container, [](const auto& elem){ return !!elem; });
     }

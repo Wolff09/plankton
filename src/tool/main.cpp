@@ -93,15 +93,15 @@ inline VerificationResult Verify(const ParsingResult& input) {
 inline void PrintInput(const ParsingResult& input) {
     assert(input.program);
     assert(input.config);
-    INFO("[input program]" << std::endl << *input.program << std::endl)
-    INFO("[input flow & invariants]" << std::endl << ConfigToString(*input.config, *input.program) << std::endl)
+    //INFO("[input program]" << std::endl << *input.program << std::endl)
+    //INFO("[input flow & invariants]" << std::endl << ConfigToString(*input.config, *input.program) << std::endl)
 }
 
 inline void PrintResult(const CommandLineInput& cmd, const ParsingResult& input, const VerificationResult& result) {
     INFO(std::endl << std::endl)
     INFO("#" << std::endl)
-    INFO("# Verdict for '" << input.program->name << "':" << std::endl)
-    INFO("#   is linearizable: " << (result.linearizable ? "YES" : "NO") << std::endl)
+    INFO("# Verdict for " << input.program->name << ":" << std::endl)
+    INFO("#   is correct/linearizable: " << (result.linearizable ? "YES" : "NO") << std::endl)
     INFO("#   time taken (ms): " << result.timeTaken.count() << std::endl)
     INFO("#" << std::endl << std::endl)
     

@@ -39,22 +39,28 @@ namespace plankton {
                 auto myElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 parent.elapsed += myElapsed;
                 parent.counter++;
-                // DEBUG("$MEASUREMENT for " << parent.info << ": " << myElapsed.count() << "ms" << std::endl)
             }
         };
 
         explicit Timer(std::string info) : info(std::move(info)), counter(0), elapsed(0) {}
-        ~Timer() { INFO(ToString("Total time measured for", true)) }
-        void Print() const { INFO(ToString("Time measured for")) }
-        Measurement Measure() { return Measurement(*this); }
+        ~Timer() {} //{ INFO(ToString("Total time measured for", true)) }
+        inline void Print() const {} //{ INFO(ToString("Time measured for")) }
+        inline Measurement Measure() { return Measurement(*this); }
+
+    private:
+        std::optional<Measurement> latest;
+
+    public:
+        inline void Start() { assert(!latest.has_value()); latest.emplace(*this); }
+        inline void Stop() { assert(latest.has_value()); latest.reset(); }
     };
 
 
-    #ifdef ENABLE_TIMER
-        #define MEASURE(X) static Timer timer(X); auto measurement = timer.Measure();
-    #else
+    //#ifdef ENABLE_TIMER
+    //    #define MEASURE(X) static Timer timer(X); auto measurement = timer.Measure();
+    //#else
         #define MEASURE(X) {}
-    #endif
+    //#endif
 
 } // plankton
 
