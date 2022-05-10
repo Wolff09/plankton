@@ -53,15 +53,21 @@ std::string MakeString(const T& object) {
 
 std::string plankton::ToString(const Type& object) { return MakeString(object); }
 std::string plankton::ToString(const Sort& object) { return MakeString(object); }
-std::string plankton::ToString(const AstNode& object) { return MakeString(object); }
 std::string plankton::ToString(const VariableDeclaration& object) { return MakeString(object); }
 std::string plankton::ToString(const BinaryOperator& object) { return MakeString(object); }
+
+std::string plankton::ToString(const AstNode& object, bool desugar) {
+    std::stringstream stream;
+    Print(object, stream, desugar);
+    return stream.str();
+}
 
 
 //
 // Printing AST
 //
 
+template<bool DESUGAR>
 struct ExpressionPrinter : public BaseProgramVisitor {
     std::ostream& stream;
     explicit ExpressionPrinter(std::ostream& stream) : stream(stream) {}
@@ -84,6 +90,7 @@ struct ExpressionPrinter : public BaseProgramVisitor {
 
     template<typename T>
     inline void HandleCompound(const T& object, std::string_view op, std::string_view empty) {
+        assert(!DESUGAR);
         if (object.expressions.empty()) stream << empty;
         stream << object.expressions.front();
         for (auto it = std::next(object.expressions.begin()); it != object.expressions.end(); ++it) {
@@ -99,11 +106,13 @@ struct ExpressionPrinter : public BaseProgramVisitor {
     }
 };
 
-struct CommandPrinter : public ExpressionPrinter {
-    using ExpressionPrinter::Visit;
+template<bool DESUGAR>
+struct CommandPrinter : public ExpressionPrinter<DESUGAR> {
+    using ExpressionPrinter<DESUGAR>::stream;
+    using ExpressionPrinter<DESUGAR>::Visit;
     std::string_view lineEnd;
 
-    explicit CommandPrinter(std::ostream& stream, bool breakLines) : ExpressionPrinter(stream), lineEnd(breakLines ? LB : " ") {}
+    explicit CommandPrinter(std::ostream& stream, bool breakLines) : ExpressionPrinter<DESUGAR>(stream), lineEnd(breakLines ? LB : " ") {}
     explicit CommandPrinter(std::ostream& stream) : CommandPrinter(stream, true) {}
 
     template<typename T>
@@ -170,16 +179,19 @@ struct CommandPrinter : public ExpressionPrinter {
     }
 
     void Visit(const ComplexAssume& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << CMD_ASSUME << "(";
         object.condition->Accept(*this);
         stream << ");" << lineEnd;
     }
     void Visit(const ComplexAssert& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << CMD_ASSERT << "(";
         object.condition->Accept(*this);
         stream << ");" << lineEnd;
     }
     void Visit(const CompareAndSwap& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << CMD_CAS << "(";
         std::deque<const AstNode*> lhs, chk, rhs;
         for (const auto& elem : object.cas) {
@@ -205,9 +217,11 @@ inline std::ostream& operator<<(std::ostream& stream, const Indent& indent) {
     return stream;
 }
 
-struct ProgramPrinter : public CommandPrinter {
-    using CommandPrinter::CommandPrinter;
-    using CommandPrinter::Visit;
+template<bool DESUGAR>
+struct ProgramPrinter : public CommandPrinter<DESUGAR> {
+    using CommandPrinter<DESUGAR>::CommandPrinter;
+    using CommandPrinter<DESUGAR>::Visit;
+    using CommandPrinter<DESUGAR>::stream;
     Indent indent;
     
     template<typename T, typename F>
@@ -307,6 +321,7 @@ struct ProgramPrinter : public CommandPrinter {
     }
 
     void Visit(const IfThenElse& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << STMT_IF << " (";
         object.condition->Accept(*this);
         stream << ") ";
@@ -315,6 +330,7 @@ struct ProgramPrinter : public CommandPrinter {
         PrintScope(*object.elseBranch);
     }
     void Visit(const IfElifElse& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         auto printBranch = [this](const auto& cb, std::string_view text) {
             stream << text << " (";
             cb.first->Accept(*this);
@@ -331,12 +347,14 @@ struct ProgramPrinter : public CommandPrinter {
         PrintScope(*object.elseBranch);
     }
     void Visit(const WhileLoop& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << STMT_WHILE << " (";
         object.condition->Accept(*this);
         stream << ") ";
         PrintScope(*object.body);
     }
     void Visit(const DoWhileLoop& object) override {
+        if constexpr (DESUGAR) { object.desugared->Accept(*this); return; }
         stream << STMT_DO << " ";
         PrintScope(*object.body, false);
         stream << " " << STMT_WHILE << " (";
@@ -345,50 +363,60 @@ struct ProgramPrinter : public CommandPrinter {
     }
 };
 
-void plankton::Print(const AstNode& object, std::ostream& stream) {
-    struct Visitor : public ProgramVisitor {
-        std::ostream& stream;
-        explicit Visitor(std::ostream& stream) : stream(stream) {}
-        void PrintExpression(const AstNode& object) { ExpressionPrinter printer(stream); object.Accept(printer); }
-        void PrintCommand(const Command& expr) { CommandPrinter printer(stream, false); expr.Accept(printer); }
-        void PrintProgram(const AstNode& expr) { ProgramPrinter printer(stream); expr.Accept(printer); }
-        void Visit(const VariableExpression& object) override { PrintExpression(object); }
-        void Visit(const TrueValue& object) override { PrintExpression(object); }
-        void Visit(const FalseValue& object) override { PrintExpression(object); }
-        void Visit(const MinValue& object) override { PrintExpression(object); }
-        void Visit(const MaxValue& object) override { PrintExpression(object); }
-        void Visit(const NullValue& object) override { PrintExpression(object); }
-        void Visit(const Dereference& object) override { PrintExpression(object); }
-        void Visit(const BinaryExpression& object) override { PrintExpression(object); }
-        void Visit(const Skip& object) override { PrintCommand(object); }
-        void Visit(const Break& object) override { PrintCommand(object); }
-        void Visit(const Continue& object) override { PrintCommand(object); }
-        void Visit(const Return& object) override { PrintCommand(object); }
-        void Visit(const Assume& object) override { PrintCommand(object); }
-        void Visit(const Fail& object) override { PrintCommand(object); }
-        void Visit(const Malloc& object) override { PrintCommand(object); }
-        void Visit(const Macro& object) override { PrintCommand(object); }
-        void Visit(const VariableAssignment& object) override { PrintCommand(object); }
-        void Visit(const MemoryWrite& object) override { PrintCommand(object); }
-        void Visit(const AcquireLock& object) override { PrintCommand(object); }
-        void Visit(const ReleaseLock& object) override { PrintCommand(object); }
-        void Visit(const Scope& object) override { PrintProgram(object); }
-        void Visit(const Atomic& object) override { PrintProgram(object); }
-        void Visit(const Sequence& object) override { PrintProgram(object); }
-        void Visit(const NondeterministicLoop& object) override { PrintProgram(object); }
-        void Visit(const Choice& object) override { PrintProgram(object); }
-        void Visit(const Function& object) override { PrintProgram(object); }
-        void Visit(const Program& object) override { PrintProgram(object); }
+template<bool DESUGAR>
+struct Dispatcher : public ProgramVisitor {
+    std::ostream& stream;
+    explicit Dispatcher(std::ostream& stream) : stream(stream) {}
 
-        void Visit(const AndExpression& object) override { PrintExpression(object); }
-        void Visit(const OrExpression& object) override { PrintExpression(object); }
-        void Visit(const ComplexAssume& object) override { PrintCommand(object); }
-        void Visit(const ComplexAssert& object) override { PrintCommand(object); }
-        void Visit(const CompareAndSwap& object) override { PrintCommand(object); }
-        void Visit(const IfThenElse& object) override { PrintProgram(object); }
-        void Visit(const IfElifElse& object) override { PrintProgram(object); }
-        void Visit(const WhileLoop& object) override { PrintProgram(object); }
-        void Visit(const DoWhileLoop& object) override { PrintProgram(object); }
-    } visitor(stream);
-    object.Accept(visitor);
+    void PrintExpression(const AstNode& object) { ExpressionPrinter<DESUGAR> printer(stream); object.Accept(printer); }
+    void PrintCommand(const Command& expr) { CommandPrinter<DESUGAR> printer(stream, false); expr.Accept(printer); }
+    void PrintProgram(const AstNode& expr) { ProgramPrinter<DESUGAR> printer(stream); expr.Accept(printer); }
+
+    void Visit(const VariableExpression& object) override { PrintExpression(object); }
+    void Visit(const TrueValue& object) override { PrintExpression(object); }
+    void Visit(const FalseValue& object) override { PrintExpression(object); }
+    void Visit(const MinValue& object) override { PrintExpression(object); }
+    void Visit(const MaxValue& object) override { PrintExpression(object); }
+    void Visit(const NullValue& object) override { PrintExpression(object); }
+    void Visit(const Dereference& object) override { PrintExpression(object); }
+    void Visit(const BinaryExpression& object) override { PrintExpression(object); }
+    void Visit(const Skip& object) override { PrintCommand(object); }
+    void Visit(const Break& object) override { PrintCommand(object); }
+    void Visit(const Continue& object) override { PrintCommand(object); }
+    void Visit(const Return& object) override { PrintCommand(object); }
+    void Visit(const Assume& object) override { PrintCommand(object); }
+    void Visit(const Fail& object) override { PrintCommand(object); }
+    void Visit(const Malloc& object) override { PrintCommand(object); }
+    void Visit(const Macro& object) override { PrintCommand(object); }
+    void Visit(const VariableAssignment& object) override { PrintCommand(object); }
+    void Visit(const MemoryWrite& object) override { PrintCommand(object); }
+    void Visit(const AcquireLock& object) override { PrintCommand(object); }
+    void Visit(const ReleaseLock& object) override { PrintCommand(object); }
+    void Visit(const Scope& object) override { PrintProgram(object); }
+    void Visit(const Atomic& object) override { PrintProgram(object); }
+    void Visit(const Sequence& object) override { PrintProgram(object); }
+    void Visit(const NondeterministicLoop& object) override { PrintProgram(object); }
+    void Visit(const Choice& object) override { PrintProgram(object); }
+    void Visit(const Function& object) override { PrintProgram(object); }
+    void Visit(const Program& object) override { PrintProgram(object); }
+
+    void Visit(const AndExpression& object) override { PrintExpression(object); }
+    void Visit(const OrExpression& object) override { PrintExpression(object); }
+    void Visit(const ComplexAssume& object) override { PrintCommand(object); }
+    void Visit(const ComplexAssert& object) override { PrintCommand(object); }
+    void Visit(const CompareAndSwap& object) override { PrintCommand(object); }
+    void Visit(const IfThenElse& object) override { PrintProgram(object); }
+    void Visit(const IfElifElse& object) override { PrintProgram(object); }
+    void Visit(const WhileLoop& object) override { PrintProgram(object); }
+    void Visit(const DoWhileLoop& object) override { PrintProgram(object); }
+};
+
+void plankton::Print(const AstNode& object, std::ostream& stream, bool desugar) {
+    if (desugar) {
+        Dispatcher<true> dispatcher(stream);
+        object.Accept(dispatcher);
+    } else {
+        Dispatcher<false> dispatcher(stream);
+        object.Accept(dispatcher);
+    }
 }

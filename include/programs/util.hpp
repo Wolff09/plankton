@@ -11,13 +11,13 @@ namespace plankton {
     template<typename T, EnableIfBaseOf<AstNode, T>>
     std::unique_ptr<T> Copy(const T& object);
     
-    void Print(const AstNode& object, std::ostream& stream);
+    void Print(const AstNode& object, std::ostream& stream, bool desugared = false);
     
     std::string ToString(const Type& object);
     std::string ToString(const Sort& object);
-    std::string ToString(const AstNode& object);
     std::string ToString(const VariableDeclaration& object);
     std::string ToString(const BinaryOperator& object);
+    std::string ToString(const AstNode& object, bool desugared = false);
 
     MoverType ComputeMoverType(const MovableAstNode& statement);
 
