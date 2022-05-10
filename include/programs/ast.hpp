@@ -41,7 +41,7 @@ namespace plankton {
         const Scope* parentScope = nullptr;
         const Atomic* parentAtomic = nullptr;
 
-        void EstablishNavigationStructure();
+        void MakeNavigable();
         [[nodiscard]] inline bool InsideAtomic() const { return parentAtomic != nullptr; }
     };
 
@@ -235,30 +235,10 @@ namespace plankton {
         ACCEPT_PROGRAM_VISITOR
     };
 
-    struct ConditionalLoop : public Statement {
-        std::unique_ptr<BinaryExpression> condition;
-        std::unique_ptr<Scope> body;
-    };
-
-    struct WhileLoop : public ConditionalLoop {
-        ACCEPT_PROGRAM_VISITOR
-    };
-
-    struct DoWhileLoop : public ConditionalLoop {
-        ACCEPT_PROGRAM_VISITOR
-    };
-
     struct NondeterministicLoop : public Statement {
         std::unique_ptr<Scope> body;
 
         explicit NondeterministicLoop(std::unique_ptr<Scope> body);
-        ACCEPT_PROGRAM_VISITOR
-    };
-
-    struct UnconditionalLoop final : public Statement {
-        std::unique_ptr<Scope> body;
-        
-        explicit UnconditionalLoop(std::unique_ptr<Scope> body);
         ACCEPT_PROGRAM_VISITOR
     };
 
@@ -284,6 +264,11 @@ namespace plankton {
 
     struct Fail final : public Command {
         explicit Fail();
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct Continue final : public Command {
+        explicit Continue();
         ACCEPT_PROGRAM_VISITOR
     };
 
@@ -356,6 +341,111 @@ namespace plankton {
     
     struct MemoryWrite final : public Assignment<Dereference, SimpleExpression> {
         using Assignment::Assignment;
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    //
+    // Syntactic Sugar
+    //
+
+    template<typename T>
+    struct SyntacticSugar {
+        std::unique_ptr<T> desugared;
+
+        explicit SyntacticSugar(std::unique_ptr<T> desugared);
+    };
+
+    struct ComplexExpression : public AstNode, public SyntacticSugar<void*> { // cannot be desugared that easily
+        std::vector<std::unique_ptr<BinaryExpression>> expressions;
+
+        explicit ComplexExpression(std::unique_ptr<BinaryExpression> expression);
+        explicit ComplexExpression(std::unique_ptr<BinaryExpression> expression, std::unique_ptr<BinaryExpression> other);
+        explicit ComplexExpression(std::vector<std::unique_ptr<BinaryExpression>> expressions);
+    };
+
+    struct AndExpression : public ComplexExpression {
+        using ComplexExpression::ComplexExpression;
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct OrExpression : public ComplexExpression {
+        using ComplexExpression::ComplexExpression;
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct SyntacticSugarStatement : public Statement, public SyntacticSugar<Statement> {
+        using SyntacticSugar::SyntacticSugar;
+    };
+
+    struct IfThenElse : public SyntacticSugarStatement {
+        std::unique_ptr<ComplexExpression> condition;
+        std::unique_ptr<Scope> ifBranch;
+        std::unique_ptr<Scope> elseBranch;
+
+        explicit IfThenElse(std::unique_ptr<BinaryExpression> expression, std::unique_ptr<Scope> ifBranch);
+        explicit IfThenElse(std::unique_ptr<BinaryExpression> expression, std::unique_ptr<Scope> ifBranch, std::unique_ptr<Scope> elseBranch);
+        explicit IfThenElse(std::unique_ptr<ComplexExpression> expression, std::unique_ptr<Scope> ifBranch);
+        explicit IfThenElse(std::unique_ptr<ComplexExpression> expression, std::unique_ptr<Scope> ifBranch, std::unique_ptr<Scope> elseBranch);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct IfElifElse : public SyntacticSugarStatement {
+        using ConditionalScope = std::pair<std::unique_ptr<ComplexExpression>, std::unique_ptr<Scope>>;
+        std::vector<ConditionalScope> conditionalBranches;
+        std::unique_ptr<Scope> elseBranch;
+
+        explicit IfElifElse(std::vector<ConditionalScope> conditionalBranches);
+        explicit IfElifElse(std::vector<ConditionalScope> conditionalBranches, std::unique_ptr<Scope> elseBranch);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct WhileLoop : public SyntacticSugarStatement {
+        std::unique_ptr<ComplexExpression> condition;
+        std::unique_ptr<Scope> body;
+
+        explicit WhileLoop(std::unique_ptr<BinaryExpression> condition, std::unique_ptr<Scope> body);
+        explicit WhileLoop(std::unique_ptr<ComplexExpression> condition, std::unique_ptr<Scope> body);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct DoWhileLoop : public SyntacticSugarStatement {
+        std::unique_ptr<ComplexExpression> condition;
+        std::unique_ptr<Scope> body;
+
+        explicit DoWhileLoop(std::unique_ptr<BinaryExpression> condition, std::unique_ptr<Scope> body);
+        explicit DoWhileLoop(std::unique_ptr<ComplexExpression> condition, std::unique_ptr<Scope> body);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct SyntacticSugarCommand : public Command, public SyntacticSugar<Statement> {
+        using SyntacticSugar::SyntacticSugar;
+    };
+
+    struct ComplexAssume : public SyntacticSugarCommand {
+        std::unique_ptr<ComplexExpression> condition;
+
+        explicit ComplexAssume(std::unique_ptr<ComplexExpression> condition);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct ComplexAssert : public SyntacticSugarCommand {
+        std::unique_ptr<ComplexExpression> condition;
+
+        explicit ComplexAssert(std::unique_ptr<BinaryExpression> condition);
+        explicit ComplexAssert(std::unique_ptr<ComplexExpression> condition);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct CompareAndSwap : public SyntacticSugarCommand {
+        struct CheckedWrite {
+            std::unique_ptr<Dereference> lhs;
+            std::unique_ptr<SimpleExpression> chk;
+            std::unique_ptr<SimpleExpression> rhs;
+        };
+        std::vector<CheckedWrite> cas;
+
+        explicit CompareAndSwap(CheckedWrite cas, bool allowSpuriousFailure = true);
+        explicit CompareAndSwap(std::vector<CheckedWrite> cas, bool allowSpuriousFailure = true);
         ACCEPT_PROGRAM_VISITOR
     };
 

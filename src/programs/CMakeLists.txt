@@ -1,6 +1,7 @@
 
 set(SOURCES
         ast.cpp
+        sugar.cpp
         visitors.cpp
 
         util/copy.cpp

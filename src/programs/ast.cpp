@@ -46,7 +46,7 @@ struct ParentSetter : public MutableBaseProgramVisitor {
     }
 };
 
-void NavigableAstNode::EstablishNavigationStructure() {
+void NavigableAstNode::MakeNavigable() {
     ParentSetter setter;
     Accept(setter);
 }
@@ -201,13 +201,24 @@ Atomic::Atomic(std::unique_ptr<Scope>  bdy) : body(std::move(bdy)) {
     assert(body);
 }
 
-Sequence::Sequence(std::unique_ptr<Statement> st, std::unique_ptr<Statement> nd)
-        : first(std::move(st)), second(std::move(nd)) {
-    assert(first);
-    assert(second);
+Sequence::Sequence(std::unique_ptr<Statement> stmt) {
+    assert(stmt);
+    statements.push_back(std::move(stmt));
 }
 
-UnconditionalLoop::UnconditionalLoop(std::unique_ptr<Scope> bdy) : body(std::move(bdy)) {
+Sequence::Sequence(std::unique_ptr<Statement> first, std::unique_ptr<Statement> second) {
+    assert(first);
+    assert(second);
+    statements.push_back(std::move(first));
+    statements.push_back(std::move(second));
+}
+
+Sequence::Sequence(std::vector<std::unique_ptr<Statement>> stmts) {
+    assert(AllNonNull(stmts));
+    MoveInto(std::move(stmts), statements);
+}
+
+NondeterministicLoop::NondeterministicLoop(std::unique_ptr<Scope> bdy) : body(std::move(bdy)) {
     assert(body);
 }
 
@@ -228,6 +239,8 @@ Choice::Choice(std::unique_ptr<Scope> branch1, std::unique_ptr<Scope> branch2) {
 Skip::Skip() = default;
 
 Fail::Fail() = default;
+
+Continue::Continue() = default;
 
 Break::Break() = default;
 
