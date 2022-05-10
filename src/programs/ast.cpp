@@ -32,10 +32,15 @@ struct ParentSetter : public MutableBaseProgramVisitor {
     inline void HandleAll(P& parent, C& children) {
         for (auto& child : children) Handle(parent, child);
     }
+    template<typename T>
+    inline void HandleDesugared(T& object) {
+        if (object.parent) Handle(*object.parent, object.desugared);
+    }
+
     void Visit(Scope& object) override { Handle(object, object.body); }
     void Visit(Atomic& object) override { Handle(object, object.body); }
     void Visit(Sequence& object) override { HandleAll(object, object.statements); }
-    void Visit(UnconditionalLoop& object) override { Handle(object, object.body); }
+    void Visit(NondeterministicLoop& object) override { Handle(object, object.body); }
     void Visit(Choice& object) override { HandleAll(object, object.branches); }
     void Visit(Function& object) override { Handle(object, object.body); }
     void Visit(Program& object) override {
@@ -44,10 +49,83 @@ struct ParentSetter : public MutableBaseProgramVisitor {
         HandleAll(object, object.apiFunctions);
         HandleAll(object, object.maintenanceFunctions);
     }
+
+    void Visit(IfThenElse& object) override {
+        Handle(object, object.ifBranch);
+        Handle(object, object.elseBranch);
+        HandleDesugared(object);
+    }
+    void Visit(IfElifElse& object) override {
+        for (auto& elem : object.conditionalBranches) Handle(object, elem.second);
+        Handle(object, object.elseBranch);
+        HandleDesugared(object);
+    }
+    void Visit(WhileLoop& object) override {
+        Handle(object, object.body);
+        HandleDesugared(object);
+    }
+    void Visit(DoWhileLoop& object) override {
+        Handle(object, object.body);
+        HandleDesugared(object);
+    }
+    void Visit(ComplexAssume& object) override {
+        HandleDesugared(object);
+    }
+    void Visit(ComplexAssert& object) override {
+        HandleDesugared(object);
+    }
+    void Visit(CompareAndSwap& object) override {
+        HandleDesugared(object);
+    }
 };
 
 void NavigableAstNode::MakeNavigable() {
     ParentSetter setter;
+    Accept(setter);
+}
+
+struct MoveSetter : MutableProgramListener {
+    inline static void Handle(MovableAstNode& object) {
+        object.moverness = ComputeMoverType(object);
+    }
+    void Enter(VariableExpression& object) override { Handle(object); }
+    void Enter(TrueValue& object) override { Handle(object); }
+    void Enter(FalseValue& object) override { Handle(object); }
+    void Enter(MinValue& object) override { Handle(object); }
+    void Enter(MaxValue& object) override { Handle(object); }
+    void Enter(NullValue& object) override { Handle(object); }
+    void Enter(Dereference& object) override { Handle(object); }
+    void Enter(BinaryExpression& object) override { Handle(object); }
+    void Enter(Skip& object) override { Handle(object); }
+    void Enter(Fail& object) override { Handle(object); }
+    void Enter(Break& object) override { Handle(object); }
+    void Enter(Continue& object) override { Handle(object); }
+    void Enter(Return& object) override { Handle(object); }
+    void Enter(Assume& object) override { Handle(object); }
+    void Enter(Malloc& object) override { Handle(object); }
+    void Enter(Macro& object) override { Handle(object); }
+    void Enter(VariableAssignment& object) override { Handle(object); }
+    void Enter(MemoryWrite& object) override { Handle(object); }
+    void Enter(AcquireLock& object) override { Handle(object); }
+    void Enter(ReleaseLock& object) override { Handle(object); }
+    void Enter(Scope& object) override { Handle(object); }
+    void Enter(Atomic& object) override { Handle(object); }
+    void Enter(Sequence& object) override { Handle(object); }
+    void Enter(NondeterministicLoop& object) override { Handle(object); }
+    void Enter(Choice& object) override { Handle(object); }
+    void Enter(AndExpression& object) override { Handle(object); for (auto& elem : object.expressions) elem->Accept(*this); }
+    void Enter(OrExpression& object) override { Handle(object); for (auto& elem : object.expressions) elem->Accept(*this); }
+    void Enter(IfThenElse& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(IfElifElse& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(WhileLoop& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(DoWhileLoop& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(ComplexAssume& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(ComplexAssert& object) override { Handle(object); object.desugared->Accept(*this); }
+    void Enter(CompareAndSwap& object) override { Handle(object); object.desugared->Accept(*this); }
+};
+
+void MovableAstNode::PopulateMoverness() {
+    MoveSetter setter;
     Accept(setter);
 }
 

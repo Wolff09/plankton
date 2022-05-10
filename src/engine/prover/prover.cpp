@@ -34,7 +34,7 @@ void Prover::Transform(const std::function<PostImage(std::unique_ptr<Annotation>
 
 
 bool Prover::NeedsInterference(const Statement& object) {
-    // return !insideAtomic && !isRightMover && !allSuccessorsAreLeftMovers;
+    // return !insideAtomic && !isMover && !allSuccessorsAreLeftMovers;
     throw std::logic_error("not yet implemented");
 }
 

@@ -8,8 +8,7 @@ using CheckedWrite = CompareAndSwap::CheckedWrite;
 using ConditionalScope = IfElifElse::ConditionalScope;
 
 
-template<typename T>
-SyntacticSugar<T>::SyntacticSugar(std::unique_ptr<T> equiv) : desugared(std::move(equiv)) {
+DesugarableSyntacticSugar::DesugarableSyntacticSugar(std::unique_ptr<Statement> equiv) : desugared(std::move(equiv)) {
     assert(desugared);
 }
 
@@ -33,19 +32,19 @@ inline std::unique_ptr<Scope> MkSkipScope() {
 // Expressions
 //
 
-ComplexExpression::ComplexExpression(std::unique_ptr<BinaryExpression> expression) : SyntacticSugar(nullptr) {
+ComplexExpression::ComplexExpression(std::unique_ptr<BinaryExpression> expression) {
     assert(expression);
     expressions.push_back(std::move(expression));
 }
 
-ComplexExpression::ComplexExpression(std::unique_ptr<BinaryExpression> expression, std::unique_ptr<BinaryExpression> other) : SyntacticSugar(nullptr) {
+ComplexExpression::ComplexExpression(std::unique_ptr<BinaryExpression> expression, std::unique_ptr<BinaryExpression> other) {
     assert(expression);
     assert(other);
     expressions.push_back(std::move(expression));
     expressions.push_back(std::move(other));
 }
 
-ComplexExpression::ComplexExpression(std::vector<std::unique_ptr<BinaryExpression>> expressions) : SyntacticSugar(nullptr) {
+ComplexExpression::ComplexExpression(std::vector<std::unique_ptr<BinaryExpression>> expressions) {
     assert(AllNonNull(expressions));
     MoveInto(std::move(expressions), expressions);
 }

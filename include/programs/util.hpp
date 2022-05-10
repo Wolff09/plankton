@@ -18,8 +18,8 @@ namespace plankton {
     std::string ToString(const AstNode& object);
     std::string ToString(const VariableDeclaration& object);
     std::string ToString(const BinaryOperator& object);
-    
-    bool IsRightMover(const Statement& statement);
+
+    MoverType ComputeMoverType(const MovableAstNode& statement);
 
     bool SyntacticalEqual(const Expression& object, const Expression& other);
     

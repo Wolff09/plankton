@@ -32,6 +32,8 @@ namespace plankton {
 
     struct MovableAstNode : virtual public AstNode {
         MoverType moverness = MoverType::NONE;
+
+        void PopulateMoverness();
     };
 
     struct NavigableAstNode : virtual public AstNode {
@@ -348,14 +350,15 @@ namespace plankton {
     // Syntactic Sugar
     //
 
-    template<typename T>
     struct SyntacticSugar {
-        std::unique_ptr<T> desugared;
-
-        explicit SyntacticSugar(std::unique_ptr<T> desugared);
     };
 
-    struct ComplexExpression : public AstNode, public SyntacticSugar<void*> { // cannot be desugared that easily
+    struct DesugarableSyntacticSugar : public SyntacticSugar {
+        std::unique_ptr<Statement> desugared;
+        explicit DesugarableSyntacticSugar(std::unique_ptr<Statement> desugared);
+    };
+
+    struct ComplexExpression : public MovableAstNode, public SyntacticSugar { // cannot be desugared that easily
         std::vector<std::unique_ptr<BinaryExpression>> expressions;
 
         explicit ComplexExpression(std::unique_ptr<BinaryExpression> expression);
@@ -373,8 +376,8 @@ namespace plankton {
         ACCEPT_PROGRAM_VISITOR
     };
 
-    struct SyntacticSugarStatement : public Statement, public SyntacticSugar<Statement> {
-        using SyntacticSugar::SyntacticSugar;
+    struct SyntacticSugarStatement : public Statement, public DesugarableSyntacticSugar {
+        using DesugarableSyntacticSugar::DesugarableSyntacticSugar;
     };
 
     struct IfThenElse : public SyntacticSugarStatement {
@@ -417,8 +420,8 @@ namespace plankton {
         ACCEPT_PROGRAM_VISITOR
     };
 
-    struct SyntacticSugarCommand : public Command, public SyntacticSugar<Statement> {
-        using SyntacticSugar::SyntacticSugar;
+    struct SyntacticSugarCommand : public Command, public DesugarableSyntacticSugar {
+        using DesugarableSyntacticSugar::DesugarableSyntacticSugar;
     };
 
     struct ComplexAssume : public SyntacticSugarCommand {

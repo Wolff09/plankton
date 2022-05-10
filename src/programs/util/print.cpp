@@ -1,5 +1,6 @@
 #include "programs/util.hpp"
 
+#include <deque>
 #include <sstream>
 
 using namespace plankton;
@@ -17,8 +18,11 @@ constexpr std::string_view SYMBOL_TUPLE_END = ">";
 constexpr std::string_view SYMBOL_DEREF = "->";
 constexpr std::string_view SYMBOL_OP_SPACE = " ";
 constexpr std::string_view SYMBOL_ASSIGN = " = ";
+constexpr std::string_view SYMBOL_AND = "  &&  ";
+constexpr std::string_view SYMBOL_OR = "  ||  ";
 constexpr std::string_view CMD_SKIP = "skip";
 constexpr std::string_view CMD_BREAK = "break";
+constexpr std::string_view CMD_CONTINUE = "continue";
 constexpr std::string_view CMD_RETURN = "return";
 constexpr std::string_view CMD_ASSUME = "assume";
 constexpr std::string_view CMD_ASSERT = "assert";
@@ -26,9 +30,15 @@ constexpr std::string_view CMD_LOCK = "__lock__";
 constexpr std::string_view CMD_UNLOCK = "__unlock__";
 constexpr std::string_view CMD_MALLOC = "malloc";
 constexpr std::string_view CMD_SIZEOF = "__sizeof__";
+constexpr std::string_view CMD_CAS = "CAS";
 constexpr std::string_view STMT_ATOMIC = "atomic";
-constexpr std::string_view STMT_LOOP = "while (true)";
+constexpr std::string_view STMT_LOOP = "while (*)";
 constexpr std::string_view STMT_CHOICE = "choose";
+constexpr std::string_view STMT_IF = "if";
+constexpr std::string_view STMT_ELIF = "else if";
+constexpr std::string_view STMT_ELSE = "else";
+constexpr std::string_view STMT_WHILE = "while";
+constexpr std::string_view STMT_DO = "do";
 
 //
 // Wrappers
@@ -71,6 +81,22 @@ struct ExpressionPrinter : public BaseProgramVisitor {
         stream << SYMBOL_OP_SPACE << object.op << SYMBOL_OP_SPACE;
         object.rhs->Accept(*this);
     }
+
+    template<typename T>
+    inline void HandleCompound(const T& object, std::string_view op, std::string_view empty) {
+        if (object.expressions.empty()) stream << empty;
+        stream << object.expressions.front();
+        for (auto it = std::next(object.expressions.begin()); it != object.expressions.end(); ++it) {
+            stream << op;
+            (*it)->Accept(*this);
+        }
+    }
+    void Visit(const AndExpression& object) override {
+        HandleCompound(object, SYMBOL_AND, LITERAL_TRUE);
+    }
+    void Visit(const OrExpression& object) override {
+        HandleCompound(object, SYMBOL_OR, LITERAL_FALSE);
+    }
 };
 
 struct CommandPrinter : public ExpressionPrinter {
@@ -92,6 +118,7 @@ struct CommandPrinter : public ExpressionPrinter {
     
     void Visit(const Skip& /*object*/) override { stream << CMD_SKIP << ";" << lineEnd; }
     void Visit(const Break& /*object*/) override { stream << CMD_BREAK << ";" << lineEnd; }
+    void Visit(const Continue& /*object*/) override { stream << CMD_CONTINUE << ";" << lineEnd; }
     void Visit(const Return& object) override {
         stream << CMD_RETURN;
         if (!object.expressions.empty()) stream << " ";
@@ -139,6 +166,30 @@ struct CommandPrinter : public ExpressionPrinter {
     void Visit(const ReleaseLock& object) override {
         stream << CMD_UNLOCK << "(";
         object.lock->Accept(*this);
+        stream << ");" << lineEnd;
+    }
+
+    void Visit(const ComplexAssume& object) override {
+        stream << CMD_ASSUME << "(";
+        object.condition->Accept(*this);
+        stream << ");" << lineEnd;
+    }
+    void Visit(const ComplexAssert& object) override {
+        stream << CMD_ASSERT << "(";
+        object.condition->Accept(*this);
+        stream << ");" << lineEnd;
+    }
+    void Visit(const CompareAndSwap& object) override {
+        stream << CMD_CAS << "(";
+        std::deque<const AstNode*> lhs, chk, rhs;
+        for (const auto& elem : object.cas) {
+            lhs.push_back(elem.lhs.get());
+            chk.push_back(elem.chk.get());
+            rhs.push_back(elem.rhs.get());
+        }
+        stream << "<"; PrintSequence(lhs); stream << ">, ";
+        stream << "<"; PrintSequence(chk); stream << ">, ";
+        stream << "<"; PrintSequence(rhs); stream << ">";
         stream << ");" << lineEnd;
     }
 };
@@ -192,11 +243,14 @@ struct ProgramPrinter : public CommandPrinter {
         PrintScope(*object.body);
     }
     void Visit(const Sequence& object) override {
-        object.first->Accept(*this);
-        stream << indent;
-        object.second->Accept(*this);
+        if (object.statements.empty()) return;
+        object.statements.front()->Accept(*this);
+        for (auto it = std::next(object.statements.begin()); it != object.statements.end(); ++it) {
+            stream << indent;
+            (*it)->Accept(*this);
+        }
     }
-    void Visit(const UnconditionalLoop& object) override {
+    void Visit(const NondeterministicLoop& object) override {
         stream << STMT_LOOP << " ";
         PrintScope(*object.body);
     }
@@ -251,6 +305,44 @@ struct ProgramPrinter : public CommandPrinter {
         }
         stream << "//" << LB << "// END program " << LB << "//" << LB;
     }
+
+    void Visit(const IfThenElse& object) override {
+        stream << STMT_IF << " (";
+        object.condition->Accept(*this);
+        stream << ") ";
+        PrintScope(*object.ifBranch, false);
+        stream << " " << STMT_ELSE << " ";
+        PrintScope(*object.elseBranch);
+    }
+    void Visit(const IfElifElse& object) override {
+        auto printBranch = [this](const auto& cb, std::string_view text) {
+            stream << text << " (";
+            cb.first->Accept(*this);
+            stream << ") ";
+            PrintScope(*cb.second, false);
+            stream << " ";
+        };
+        assert(!object.conditionalBranches.empty());
+        printBranch(object.conditionalBranches.front(), STMT_IF);
+        for (auto it = std::next(object.conditionalBranches.begin()); it != object.conditionalBranches.end(); ++it) {
+            printBranch(*it, STMT_ELIF);
+        }
+        stream << STMT_ELSE << " ";
+        PrintScope(*object.elseBranch);
+    }
+    void Visit(const WhileLoop& object) override {
+        stream << STMT_WHILE << " (";
+        object.condition->Accept(*this);
+        stream << ") ";
+        PrintScope(*object.body);
+    }
+    void Visit(const DoWhileLoop& object) override {
+        stream << STMT_DO << " ";
+        PrintScope(*object.body, false);
+        stream << " " << STMT_WHILE << " (";
+        object.condition->Accept(*this);
+        stream << ");" << LB;
+    }
 };
 
 void plankton::Print(const AstNode& object, std::ostream& stream) {
@@ -270,6 +362,7 @@ void plankton::Print(const AstNode& object, std::ostream& stream) {
         void Visit(const BinaryExpression& object) override { PrintExpression(object); }
         void Visit(const Skip& object) override { PrintCommand(object); }
         void Visit(const Break& object) override { PrintCommand(object); }
+        void Visit(const Continue& object) override { PrintCommand(object); }
         void Visit(const Return& object) override { PrintCommand(object); }
         void Visit(const Assume& object) override { PrintCommand(object); }
         void Visit(const Fail& object) override { PrintCommand(object); }
@@ -282,10 +375,20 @@ void plankton::Print(const AstNode& object, std::ostream& stream) {
         void Visit(const Scope& object) override { PrintProgram(object); }
         void Visit(const Atomic& object) override { PrintProgram(object); }
         void Visit(const Sequence& object) override { PrintProgram(object); }
-        void Visit(const UnconditionalLoop& object) override { PrintProgram(object); }
+        void Visit(const NondeterministicLoop& object) override { PrintProgram(object); }
         void Visit(const Choice& object) override { PrintProgram(object); }
         void Visit(const Function& object) override { PrintProgram(object); }
         void Visit(const Program& object) override { PrintProgram(object); }
+
+        void Visit(const AndExpression& object) override { PrintExpression(object); }
+        void Visit(const OrExpression& object) override { PrintExpression(object); }
+        void Visit(const ComplexAssume& object) override { PrintCommand(object); }
+        void Visit(const ComplexAssert& object) override { PrintCommand(object); }
+        void Visit(const CompareAndSwap& object) override { PrintCommand(object); }
+        void Visit(const IfThenElse& object) override { PrintProgram(object); }
+        void Visit(const IfElifElse& object) override { PrintProgram(object); }
+        void Visit(const WhileLoop& object) override { PrintProgram(object); }
+        void Visit(const DoWhileLoop& object) override { PrintProgram(object); }
     } visitor(stream);
     object.Accept(visitor);
 }
