@@ -44,6 +44,7 @@ set(SOURCES
         prover/cmd.cpp
         prover/default.cpp
         prover/dispatch.cpp
+        prover/func.cpp
         prover/macro.cpp
         prover/prog.cpp
         prover/prover.cpp

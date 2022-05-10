@@ -1,46 +1,29 @@
 #include "engine/prover.hpp"
 
-#include "programs/util.hpp"
-
 using namespace plankton;
 
+constexpr std::size_t PROOF_ABORT_AFTER = 7;
+
+
+inline void PerformFixpointIteration(const Program& object, Prover& prover) {
+    for (const auto& function : object.apiFunctions) {
+        prover.HandleFunction(*function);
+    }
+    for (const auto& function : object.maintenanceFunctions) {
+        prover.HandleFunction(*function);
+    }
+}
 
 void Prover::HandleProgram(const Program& object) {
-    throw std::logic_error("not yet implemented");
-}
-
-inline void HandleFunctionBody(const Function& func, Prover& prover) {
-    prover.HandleScope(*func.body);
-
-    // check for missing return
-    if (!prover.current.empty() && !plankton::IsVoid(func)) {
-        throw std::logic_error("Detected non-returning path through non-void function '" + func.name + "'."); // TODO: better error handling
+    Callback(&ProofListener::BeforeHandleProgram, std::cref(object));
+    for (std::size_t counter = 0; counter < PROOF_ABORT_AFTER; ++counter) {
+        Callback(&ProofListener::BeforeHandleProgramFixpointIteration, std::cref(object), counter);
+        PerformFixpointIteration(object, *this);
+        if (!ConsolidateDiscoveredInterference()) {
+            CallbackReverse(&ProofListener::BeforeHandleProgram, std::cref(object));
+            return;
+        }
+        CallbackReverse(&ProofListener::AfterHandleProgramFixpointIteration, std::cref(object), counter);
     }
-
-    // patch void return
-    static Return returnVoid;
-    prover.HandleReturn(returnVoid);
-    assert(prover.current.empty());
-    prover.current.clear();
-}
-
-void Prover::HandleFunction(const Function& object) {
-    switch (object.kind) {
-        case Function::API: HandleApiFunction(object); break;
-        case Function::HELP: HandleMaintenanceFunction(object); break;
-        case Function::MACRO: HandleMacroFunction(object); break;
-        case Function::INIT: break; // TODO: handle init
-    }
-}
-
-void Prover::HandleMacroFunction(const Function& object) {
-    HandleFunctionBody(object, *this);
-}
-
-void Prover::HandleMaintenanceFunction(const Function& object) {
-    throw std::logic_error("not yet implemented");
-}
-
-void Prover::HandleApiFunction(const Function& object) {
-    throw std::logic_error("not yet implemented");
+    throw std::logic_error("Aborting: proof does not seem to stabilize."); // TODO: remove / better error handling
 }

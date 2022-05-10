@@ -169,7 +169,7 @@ namespace plankton {
         virtual void BeforePrune() {}
         virtual void BeforeJoin() {}
         virtual void BeforeWiden() {}
-        virtual void BeforeLinearizabilityCheck() {}
+        virtual void BeforeLinearizabilityCheck(const Function& /*object*/) {}
 
         virtual void AfterApplyInterference() {}
         virtual void AfterAddDiscoveredInterference() {}
@@ -181,7 +181,7 @@ namespace plankton {
         virtual void AfterPrune() {}
         virtual void AfterJoin() {}
         virtual void AfterWiden() {}
-        virtual void AfterLinearizabilityCheck() {}
+        virtual void AfterLinearizabilityCheck(const Function& /*object*/) {}
     };
 
     std::unique_ptr<Prover> MakeDefaultProver(const SolverConfig& config, const Program& program, bool precise = false);

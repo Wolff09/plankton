@@ -12,7 +12,7 @@
 #include "visitors.hpp"
 
 namespace plankton {
-    
+
     struct AstNode {
         explicit AstNode() = default;
         AstNode(const AstNode& other) = delete;
@@ -25,6 +25,25 @@ namespace plankton {
     #define ACCEPT_PROGRAM_VISITOR \
         void Accept(ProgramVisitor& visitor) const override { visitor.Visit(*this); } \
         void Accept(MutableProgramVisitor& visitor) override { visitor.Visit(*this); }
+
+    enum struct MoverType {
+        NONE, LEFT, RIGHT, BOTH
+    };
+
+    struct MovableAstNode : virtual public AstNode {
+        MoverType moverness = MoverType::NONE;
+    };
+
+    struct NavigableAstNode : virtual public AstNode {
+        const NavigableAstNode* parent = nullptr;
+        const Program* parentProgram = nullptr;
+        const Function* parentFunction = nullptr;
+        const Scope* parentScope = nullptr;
+        const Atomic* parentAtomic = nullptr;
+
+        void EstablishNavigationStructure();
+        [[nodiscard]] inline bool InsideAtomic() const { return parentAtomic != nullptr; }
+    };
 
     //
     // Types, Variables
@@ -77,26 +96,27 @@ namespace plankton {
     // Programs, Functions
     //
 
-    struct Function final : public AstNode {
-        enum Kind { API, MACRO, INIT };
+    struct Function final : public NavigableAstNode {
+        enum Kind { API, MAINTENANCE, MACRO, INIT };
         
         std::string name;
         Kind kind;
         std::vector<std::reference_wrapper<const Type>> returnType;
         std::vector<std::unique_ptr<VariableDeclaration>> parameters;
         std::unique_ptr<Scope> body;
-        
+
         explicit Function(std::string name, Kind kind, std::unique_ptr<Scope> body);
         ACCEPT_PROGRAM_VISITOR
     };
 
-    struct Program final : public AstNode {
+    struct Program final : public NavigableAstNode {
         std::string name;
         std::vector<std::unique_ptr<Type>> types;
         std::vector<std::unique_ptr<VariableDeclaration>> variables;
         std::unique_ptr<Function> initializer;
         std::vector<std::unique_ptr<Function>> macroFunctions;
         std::vector<std::unique_ptr<Function>> apiFunctions;
+        std::vector<std::unique_ptr<Function>> maintenanceFunctions;
         // std::map<std::string, std::string> options;
 
         explicit Program(std::string name, std::unique_ptr<Function> initializer);
@@ -107,7 +127,7 @@ namespace plankton {
     // Expressions
     //
     
-    struct Expression : AstNode {
+    struct Expression : MovableAstNode {
         [[nodiscard]] virtual const Type& GetType() const = 0;
         [[nodiscard]] virtual Sort GetSort() const { return GetType().sort; };
     };
@@ -188,7 +208,7 @@ namespace plankton {
     // Statements
     //
     
-    struct Statement : public AstNode {
+    struct Statement : public MovableAstNode, public NavigableAstNode {
     };
 
     struct Scope final : public Statement {
@@ -207,10 +227,31 @@ namespace plankton {
     };
     
     struct Sequence final : public Statement {
-        std::unique_ptr<Statement> first;
-        std::unique_ptr<Statement> second;
-        
+        std::vector<std::unique_ptr<Statement>> statements;
+
+        explicit Sequence(std::unique_ptr<Statement> stmt);
         explicit Sequence(std::unique_ptr<Statement> first, std::unique_ptr<Statement> second);
+        explicit Sequence(std::vector<std::unique_ptr<Statement>> stmts);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct ConditionalLoop : public Statement {
+        std::unique_ptr<BinaryExpression> condition;
+        std::unique_ptr<Scope> body;
+    };
+
+    struct WhileLoop : public ConditionalLoop {
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct DoWhileLoop : public ConditionalLoop {
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct NondeterministicLoop : public Statement {
+        std::unique_ptr<Scope> body;
+
+        explicit NondeterministicLoop(std::unique_ptr<Scope> body);
         ACCEPT_PROGRAM_VISITOR
     };
 
@@ -317,8 +358,7 @@ namespace plankton {
         using Assignment::Assignment;
         ACCEPT_PROGRAM_VISITOR
     };
-    
-    
+
     //
     // Output
     //

@@ -51,6 +51,7 @@ void Prover::HandleReturn(const Return& cmd) {
         for (const auto* scope : scopes) {
             annotation = solver->PostLeave(std::move(annotation), *scope);
         }
+        throw; // TODO: leave function?
         returning.emplace_back(std::move(annotation), std::move(result));
     }
     current.clear();

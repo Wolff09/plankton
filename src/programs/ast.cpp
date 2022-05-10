@@ -7,6 +7,51 @@ using namespace plankton;
 
 
 //
+// AstNodes
+//
+
+template<typename T>
+[[nodiscard]] const T* GetParent(const NavigableAstNode& node) {
+    for (auto current = node.parent; current != nullptr; current = current->parent) {
+        if (auto target = dynamic_cast<const T*>(current)) return target;
+    }
+    return nullptr;
+}
+
+struct ParentSetter : public MutableBaseProgramVisitor {
+    template<typename P, typename C>
+    inline void Handle(P& parent, C& child) {
+        child->parent = &parent;
+        child->parentProgram = GetParent<Program>(*child);
+        child->parentFunction = GetParent<Function>(*child);
+        child->parentScope = GetParent<Scope>(*child);
+        child->parentAtomic = GetParent<Atomic>(*child);
+        child->Accept(*this);
+    }
+    template<typename P, typename C>
+    inline void HandleAll(P& parent, C& children) {
+        for (auto& child : children) Handle(parent, child);
+    }
+    void Visit(Scope& object) override { Handle(object, object.body); }
+    void Visit(Atomic& object) override { Handle(object, object.body); }
+    void Visit(Sequence& object) override { HandleAll(object, object.statements); }
+    void Visit(UnconditionalLoop& object) override { Handle(object, object.body); }
+    void Visit(Choice& object) override { HandleAll(object, object.branches); }
+    void Visit(Function& object) override { Handle(object, object.body); }
+    void Visit(Program& object) override {
+        Handle(object, object.initializer);
+        HandleAll(object, object.macroFunctions);
+        HandleAll(object, object.apiFunctions);
+        HandleAll(object, object.maintenanceFunctions);
+    }
+};
+
+void NavigableAstNode::EstablishNavigationStructure() {
+    ParentSetter setter;
+    Accept(setter);
+}
+
+//
 // Types, Variables
 //
 
