@@ -64,6 +64,10 @@ namespace plankton {
         std::unique_ptr<Statement> MakeMalloc(PlanktonParser::CmdMallocContext& context);
         std::unique_ptr<Statement> MakeAssume(PlanktonParser::LogicConditionContext& context);
         std::unique_ptr<Statement> MakeAssert(PlanktonParser::LogicConditionContext& context);
+        std::unique_ptr<Statement> MakeAssertFlow(PlanktonParser::CmdAssertFlowContext& context);
+        std::unique_ptr<Statement> MakeStub(PlanktonParser::CmdStubContext& context);
+        std::unique_ptr<Statement> MakeJoin(PlanktonParser::CmdJoinContext& context);
+        std::unique_ptr<Statement> MakeAssumeFlow(PlanktonParser::CmdAssumeFlowContext& context);
         std::unique_ptr<Statement> MakeCall(PlanktonParser::CmdCallContext& context);
         std::unique_ptr<Statement> MakeReturn(PlanktonParser::CmdReturnListContext& context);
         std::unique_ptr<Statement> MakeReturn(PlanktonParser::CmdReturnExprContext& context);

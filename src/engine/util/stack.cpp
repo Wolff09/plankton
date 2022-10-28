@@ -173,6 +173,7 @@ void plankton::ExtendStack(Annotation& annotation, Encoding& encoding, Extension
     for (auto& candidate : candidates) {
         encoding.AddCheck(encoding.Encode(*candidate), [&candidate,&annotation](bool holds){
             assert(candidate);
+            // DEBUG("  --[" << holds << "] " << *candidate << std::endl)
             if (holds) annotation.Conjoin(std::move(candidate));
         });
     }
@@ -181,5 +182,8 @@ void plankton::ExtendStack(Annotation& annotation, Encoding& encoding, Extension
 
 void plankton::ExtendStack(Annotation& annotation, const SolverConfig& config, ExtensionPolicy policy) {
     Encoding encoding(*annotation.now, config);
+    for (const auto& past : annotation.past) {
+        encoding.AddPremise(encoding.EncodeInvariants(*past->formula, config));
+    }
     plankton::ExtendStack(annotation, encoding, policy);
 }

@@ -11,7 +11,9 @@ namespace plankton {
     struct SolverConfig {
         explicit SolverConfig() = default;
         virtual ~SolverConfig() = default;
-        
+
+        enum Acyclicity { PHYSICAL, EFFECTIVE, NONE };
+
         /**
          * Retrieves the type of members of second-order flow variables.
          * @return The type of flow values.
@@ -26,6 +28,12 @@ namespace plankton {
          */
         [[nodiscard]] virtual std::size_t
         GetMaxFootprintDepth(const Type& type, const std::string& updatedField) const = 0;
+
+        /**
+         * Gives the acyclicity condition of the overall heap graph.
+         * @return The heap graph's acyclicity
+         */
+        [[nodiscard]] virtual Acyclicity GetGraphAcyclicity() const = 0;
         
         /**
          * An invariant 'I(node)' that is implicitly universally quantified over all local nodes in the heap.

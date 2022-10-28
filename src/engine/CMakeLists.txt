@@ -34,7 +34,9 @@ set(SOURCES
         solver/post_assign_var.cpp
         solver/post_assign_write.cpp
         solver/post_assume.cpp
+        solver/post_flow.cpp
         solver/post_malloc.cpp
+        solver/post_stub.cpp
         solver/scope.cpp
         solver/solver.cpp
         solver/stability.cpp

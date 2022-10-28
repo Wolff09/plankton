@@ -43,7 +43,7 @@ namespace plankton {
     std::deque<std::unique_ptr<Axiom>> MakeStackCandidates(const LogicObject& object, const LogicObject& other, ExtensionPolicy policy);
     void ExtendStack(Annotation& annotation, Encoding& encoding, ExtensionPolicy policy);
     void ExtendStack(Annotation& annotation, const SolverConfig& config, ExtensionPolicy policy);
-    
+
     struct ReachSet {
         std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> container;
         [[nodiscard]] bool IsReachable(const SymbolDeclaration& source, const SymbolDeclaration& target) const;
@@ -51,7 +51,10 @@ namespace plankton {
     };
     ReachSet ComputeReachability(const Formula& formula);
     ReachSet ComputeReachability(const FlowGraph& graph, EMode mode);
-    
+    ReachSet ComputeEffectiveReachability(const Formula& formula, const SolverConfig& config);
+    ReachSet ComputeEffectiveReachability(const FlowGraph& graph, EMode mode);
+    bool IsOutflowFalse(const Type& type, const std::string& field, const SolverConfig& config);
+
     void AddPureCheck(const FlowGraph& graph, Encoding& encoding, const std::function<void(bool)>& acceptPurity);
     void AddPureSpecificationCheck(const FlowGraph& graph, Encoding& encoding, const ObligationAxiom& obligation,
                                    const std::function<void(std::optional<bool>)>& acceptFulfillment);

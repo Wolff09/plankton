@@ -11,8 +11,8 @@ program : option* (
           | funcs+=function
           | ctns+=containsPredicate
           | outf+=outflowPredicate
-//          | sinv+=sharedInvariant
           | ninv+=nodeInvariant
+          | acyc+=acyclicityInvariant
         )* EOF ;
 
 //
@@ -71,21 +71,25 @@ statement : 'choose' scope+                                               #stmtC
           | command ';'                                                   #stmtCom
           ;
 
-command : 'skip'                                            #cmdSkip
-        | lhs=varList '=' rhs=exprList                      #cmdAssignStack
-        | lhs=derefList '=' rhs=simpleExprList              #cmdAssignHeap
-        | lhs=Identifier '=' rhs=logicCondition             #cmdAssignCondition
-        | (lhs=Identifier '=')? cas                         #cmdCas
-        | lhs=Identifier '=' 'malloc'                       #cmdMalloc
-        | 'assume' '(' logicCondition ')'                   #cmdAssume
-        | 'assert' '(' logicCondition ')'                   #cmdAssert
-        | (lhs=varList '=')? name=Identifier args=argList   #cmdCall
-        | 'break'                                           #cmdBreak
-        | 'return'                                          #cmdReturnVoid
-        | 'return' simpleExprList                           #cmdReturnList
-        | 'return' logicCondition                           #cmdReturnExpr
-        | '__lock__' '(' lock=deref ')'                     #cmdLock
-        | '__unlock__' '(' lock=deref ')'                   #cmdUnlock
+command : 'skip'                                                        #cmdSkip
+        | lhs=varList '=' rhs=exprList                                  #cmdAssignStack
+        | lhs=derefList '=' rhs=simpleExprList                          #cmdAssignHeap
+        | lhs=Identifier '=' rhs=logicCondition                         #cmdAssignCondition
+        | (lhs=Identifier '=')? cas                                     #cmdCas
+        | lhs=Identifier '=' 'malloc'                                   #cmdMalloc
+        | 'assume' '(' logicCondition ')'                               #cmdAssume
+        | 'assert' '(' logicCondition ')'                               #cmdAssert
+        | 'assertFlow' '(' val=simpleExpression ',' flow=Identifier ')' #cmdAssertFlow
+        | 'assumeFlow' '(' val=simpleExpression ',' flow=Identifier ')' #cmdAssumeFlow
+        | (lhs=varList '=')? name=Identifier args=argList               #cmdCall
+        | 'break'                                                       #cmdBreak
+        | 'return'                                                      #cmdReturnVoid
+        | 'return' simpleExprList                                       #cmdReturnList
+        | 'return' logicCondition                                       #cmdReturnExpr
+        | '@stub' typeName=Identifier '::' fieldName=Identifier         #cmdStub
+        | '@join'                                                       #cmdJoin
+        | '__lock__' '(' lock=deref ')'                                 #cmdLock
+        | '__unlock__' '(' lock=deref ')'                               #cmdUnlock
         ;
 
 cas : 'CAS' '(' dst=varList ',' cmp=simpleExprList ',' src=simpleExprList ')'    #casStack
@@ -165,13 +169,17 @@ outflowPredicate : 'def' Outflow '[' field=Identifier ']'
                    '{' invariant '}'
                  ;
 
-//sharedInvariant : 'def' ImplicationSet '[' name=Identifier ']' '(' ')' '{' invariant '}'
-//                  ;
-
 nodeInvariant : 'def' Invariant '[' (isShared=Shared | isLocal=Local) ']'
                 '(' nodeType=type nodeName=Identifier ')'
                 '{' invariant '}'
               ;
+
+acyclicityCondition : 'physical'   #acycPhysical
+                    | 'effective'  #acycEffective
+                    | 'none'       #acycNone
+                    ;
+
+acyclicityInvariant : 'def' Acyclicity '{' acyclicityCondition '}' ;
 
 
 /***********************************************/
@@ -237,6 +245,7 @@ Neg : '!' ;
 Contains : '@contains';
 Outflow : '@outflow';
 Invariant : '@invariant';
+Acyclicity : '@acyclicity';
 Shared : 'shared';
 Local : 'local';
 In : 'in';

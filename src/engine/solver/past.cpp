@@ -232,13 +232,18 @@ struct Interpolator {
     void Interpolate() {
         Filter();
         ExpandHistoryMemory();
-        // DEBUG(" && after expansion: " << annotation << std::endl)
+        // DEBUG(" && after first expansion: " << annotation << std::endl)
         Filter();
+        // DEBUG(" && after first filter: " << annotation << std::endl)
         InterpolatePastToNow();
         AddTrivialPast();
         // DEBUG(" && after interpolation: " << annotation << std::endl)
         Filter();
-        // DEBUG(" && after last filter: " << annotation << std::endl)
+        // DEBUG(" && after second filter: " << annotation << std::endl)
+        // ExpandHistoryMemory();
+        // // DEBUG(" && after last expansion: " << annotation << std::endl)
+        // Filter();
+        // // DEBUG(" && after last filter: " << annotation << std::endl)
         PostProcess();
     }
 
@@ -276,8 +281,8 @@ struct Interpolator {
     }
 
     [[nodiscard]] inline std::set<const SymbolDeclaration*> GetPointerFields(const SharedMemoryCore& memory) const {
-        return plankton::Collect<SymbolDeclaration>(memory, [this](auto& obj){
-            return obj.type.sort == Sort::PTR && plankton::TryGetResource(obj, *annotation.now);
+        return plankton::Collect<SymbolDeclaration>(memory, [](auto& obj){
+            return obj.type.sort == Sort::PTR;
         });
     }
 
@@ -303,6 +308,7 @@ struct Interpolator {
             // if (!plankton::Membership(referenced, &pastAddress)) continue;
 
             auto expansion = getExpansion(*elem);
+            // DEBUG("  -- expanding { ") DEBUG_FOREACH(expansion, DEBUG(elem->name << " ")) DEBUG(" } for " << *elem << std::endl)
             auto past = MakeStackBlueprint();
             past->Conjoin(std::move(elem->formula));
 

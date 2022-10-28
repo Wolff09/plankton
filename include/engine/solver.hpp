@@ -15,10 +15,13 @@ namespace plankton {
     struct HeapEffect final {
         std::unique_ptr<SharedMemoryCore> pre; // memory before update
         std::unique_ptr<SharedMemoryCore> post; // memory after update
-        std::unique_ptr<Formula> context; // required but unaltered resources (not a frame!)
+        std::unique_ptr<Formula> context; // stack context of pre/post (not a frame!)
+        std::vector<std::unique_ptr<BinaryExpression>> halo; // stack context beyond pre/post
     
         explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
                             std::unique_ptr<Formula> context);
+        explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
+                            std::unique_ptr<Formula> context, std::vector<std::unique_ptr<BinaryExpression>> halo);
     };
 
     struct PostImage final {
@@ -42,6 +45,9 @@ namespace plankton {
         [[nodiscard]] std::unique_ptr<Annotation> PostLeave(std::unique_ptr<Annotation> pre, const Scope& scope) const;
 
         [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const Assume& cmd) const;
+        [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const AssertFlow& cmd) const;
+        [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const AssumeFlow& cmd) const;
+        [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const UpdateStub& cmd) const;
         [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const Malloc& cmd) const;
         [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const AcquireLock& cmd) const;
         [[nodiscard]] PostImage Post(std::unique_ptr<Annotation> pre, const ReleaseLock& cmd) const;

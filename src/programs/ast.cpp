@@ -198,6 +198,20 @@ Assume::Assume(std::unique_ptr<BinaryExpression> cond) : condition(std::move(con
     assert(condition->GetType() == Type::Bool());
 }
 
+AssertFlow::AssertFlow(std::unique_ptr<SimpleExpression> val, std::unique_ptr<VariableExpression> obj) : value(std::move(val)), object(std::move(obj)) {
+    assert(value);
+    assert(object);
+    assert(value->GetSort() == Sort::DATA);
+    assert(object->GetSort() == Sort::PTR);
+}
+
+AssumeFlow::AssumeFlow(std::unique_ptr<SimpleExpression> val, std::unique_ptr<VariableExpression> obj) : value(std::move(val)), object(std::move(obj)) {
+    assert(value);
+    assert(object);
+    assert(value->GetSort() == Sort::DATA);
+    assert(object->GetSort() == Sort::PTR);
+}
+
 Malloc::Malloc(std::unique_ptr<VariableExpression> left) : lhs(std::move(left)) {
     assert(lhs);
 }
@@ -230,6 +244,12 @@ Assignment<L,R>::Assignment(std::unique_ptr<L> left, std::unique_ptr<R> right) {
 
 template struct plankton::Assignment<VariableExpression, ValueExpression>;
 template struct plankton::Assignment<Dereference, SimpleExpression>;
+
+UpdateStub::UpdateStub(const Type& type, const std::string& field) : type(type), field(field) {
+    assert(type.GetField(field).has_value());
+}
+
+Suggestion::Suggestion(plankton::Suggestion::Hint hint) : hint(hint) {}
 
 
 //

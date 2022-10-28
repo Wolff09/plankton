@@ -50,6 +50,36 @@ inline const Type& GetValueType(const AstBuilder& builder, PlanktonParser::TypeC
 
 
 //
+// Acyclicity
+//
+
+struct ValueBuilder : public PlanktonBaseVisitor {
+    std::unique_ptr<SimpleExpression> result = nullptr;
+
+    template<typename T>
+    inline antlrcpp::Any Handle() { result = std::make_unique<T>(); return nullptr; }
+    antlrcpp::Any visitValueTrue(PlanktonParser::ValueTrueContext*) override { return Handle<TrueValue>(); }
+    antlrcpp::Any visitValueFalse(PlanktonParser::ValueFalseContext*) override { return Handle<FalseValue>(); }
+    antlrcpp::Any visitValueMax(PlanktonParser::ValueMaxContext*) override { return Handle<MaxValue>(); }
+    antlrcpp::Any visitValueMin(PlanktonParser::ValueMinContext*) override { return Handle<MinValue>(); }
+    antlrcpp::Any visitValueNull(PlanktonParser::ValueNullContext*) override { return Handle<NullValue>(); }
+};
+
+struct AcyclicityVisitor : public PlanktonBaseVisitor {
+    std::any visitAcycPhysical(PlanktonParser::AcycPhysicalContext* /*ctx*/) override { return SolverConfig::PHYSICAL; }
+    std::any visitAcycEffective(PlanktonParser::AcycEffectiveContext* /*ctx*/) override { return SolverConfig::EFFECTIVE; }
+    std::any visitAcycNone(PlanktonParser::AcycNoneContext* /*ctx*/) override { return SolverConfig::NONE; }
+};
+
+inline SolverConfig::Acyclicity GetAcyclicity(PlanktonParser::AcyclicityInvariantContext& ctx) {
+    AcyclicityVisitor visitor;
+    auto res = ctx.acyclicityCondition()->accept(&visitor);
+    if (!res.has_value()) throw std::logic_error("Internal parsing error."); // TODO: better error handling
+    return std::any_cast<SolverConfig::Acyclicity>(res);
+}
+
+
+//
 // Storage units
 //
 
@@ -249,9 +279,14 @@ std::map<const VariableDeclaration*, FlowStore> ExtractVariableInvariants(const 
 //
 
 struct ParsedSolverConfigImpl : public ParsedSolverConfig {
+    SolverConfig::Acyclicity acyclicity = SolverConfig::PHYSICAL;
     std::map<const Type*, FlowStore> containsPred, sharedInv, localInv;
     std::map<std::pair<const Type*, std::string>, FlowStore> outflowPred;
     std::map<const VariableDeclaration*, FlowStore> variableInv;
+
+    [[nodiscard]] Acyclicity GetGraphAcyclicity() const override {
+        return acyclicity;
+}
     
     template<typename T>
     [[nodiscard]] inline const FlowStore* FindStore(const std::map<T, FlowStore>& map, const T& key) const {
@@ -297,6 +332,11 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
     if (NoConfig(context)) return nullptr;
     CheckConfig(context, prepared);
     auto result = std::make_unique<ParsedSolverConfigImpl>();
+
+    if (!context.acyc.empty()) {
+        if (context.acyc.size() > 1) throw std::logic_error("Parse error: multiple acyclicity constraints provided."); // TODO: better error handling
+        result->acyclicity = GetAcyclicity(*context.acyc.at(0));
+    }
     
     for (auto* containsContext : context.ctns) {
         auto store = MakeContains(*this, *containsContext);

@@ -15,7 +15,6 @@ using namespace plankton;
 // However, this would require to construct many flow graphs when finding new points-to predicates.
 // Hence, we go with a syntactic check for reachability.
 
-
 struct PostImageInfo {
     const SolverConfig& config;
     const MemoryWrite& command;
@@ -26,11 +25,14 @@ struct PostImageInfo {
     std::set<const FulfillmentAxiom*> preFulfillments;
     std::deque<std::unique_ptr<Axiom>> postSpecifications;
     std::optional<bool> isPureUpdate = std::nullopt;
-    
-    std::map<const SymbolDeclaration*, const SymbolDeclaration*> outsideInsideAlias;
-    std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> outsideInsideDistinct;
+
+    std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> aliasMap;
+    std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> distinctMap;
+    // std::map<const SymbolDeclaration*, const SymbolDeclaration*> outsideInsideAlias;
+    // std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> outsideInsideDistinct;
     std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<Axiom>>> effectContext;
-    
+    std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<BinaryExpression>>> effectHalo;
+
     explicit PostImageInfo(std::unique_ptr<Annotation> pre_, const MemoryWrite& cmd, const SolverConfig& config)
             : config(config), command(cmd), footprint(plankton::MakeFlowFootprint(std::move(pre_), cmd, config)),
               encoding(footprint), pre(*footprint.pre),
@@ -85,17 +87,33 @@ inline void CheckPublishing(PostImageInfo& info) {
             if (auto next = plankton::TryGetResource(field.postValue, *info.pre.now)) {
                 if (dynamic_cast<const SharedMemoryCore*>(next)) continue;
             }
-            info.encoding.AddCheck(info.encoding.EncodeIsNull(field.postValue), [](bool holds){
+            info.encoding.AddCheck(info.encoding.EncodeIsNull(field.postValue), [name=node.address.name](bool holds){
                 if (holds) return;
-                throw std::logic_error("Footprint too small to capture publishing"); // TODO: better error handling
+                throw std::logic_error("Footprint too small to capture publishing of address '" + name + "'"); // TODO: better error handling
             });
         }
     }
 }
 
+inline std::pair<ReachSet, ReachSet> GetReachSets(const PostImageInfo& info) {
+    switch (info.config.GetGraphAcyclicity()) {
+        case SolverConfig::PHYSICAL:
+            return {
+                    plankton::ComputeReachability(info.footprint, EMode::PRE),
+                    plankton::ComputeReachability(info.footprint, EMode::POST)
+            };
+        case SolverConfig::EFFECTIVE:
+            return {
+                    plankton::ComputeEffectiveReachability(info.footprint, EMode::PRE),
+                    plankton::ComputeEffectiveReachability(info.footprint, EMode::POST)
+            };
+        case SolverConfig::NONE:
+            throw std::logic_error("Unsupported Acyclicity: none.");
+    }
+}
+
 inline void CheckReachability(PostImageInfo& info) {
-    auto preReach = plankton::ComputeReachability(info.footprint, EMode::PRE);
-    auto postReach = plankton::ComputeReachability(info.footprint, EMode::POST);
+    auto [preReach, postReach] = GetReachSets(info);
 
     // ensure no cycle inside footprint after update
     for (const auto& node : info.footprint.nodes) {
@@ -172,14 +190,14 @@ inline void CheckFlowUniqueness(PostImageInfo& info) {
     auto uniqueness = info.encoding.EncodeInflowUniqueness(info.footprint, EMode::POST);
     if (!info.encoding.Implies(uniqueness)) {
         throw std::logic_error("Unsafe update: inflow uniqueness not guaranteed."); // TODO: better error handling
-    };
+    }
 }
 
 inline void CheckInvariant(PostImageInfo& info) {
     for (const auto& node : info.footprint.nodes) {
         auto nodeInvariant = info.encoding.EncodeNodeInvariant(node, EMode::POST);
 
-        // // // DEBUG
+        // // DEBUG
         // if (!node.postLocal) {
         //     auto theNodeRaw = node.ToLogic(EMode::POST);
         //     auto theNode = dynamic_cast<const SharedMemoryCore*>(theNodeRaw.get());
@@ -231,22 +249,28 @@ inline void AddSpecificationChecks(PostImageInfo& info) {
 }
 
 inline void AddAffectedOutsideChecks(PostImageInfo& info) {
-    auto outsideMemory = info.GetOutsideMemory<SharedMemoryCore>();
-    for (const auto& inside : info.footprint.nodes) {
-        auto& insideAdr = inside.address;
-        for (const auto* outside : outsideMemory) {
-            auto& outsideAdr = outside->node->Decl();
-            auto isAlias = info.encoding.Encode(insideAdr) == info.encoding.Encode(outsideAdr);
-            auto isDistinct = info.encoding.Encode(insideAdr) != info.encoding.Encode(outsideAdr);
-            info.encoding.AddCheck(isAlias, [&info,in=&insideAdr,out=&outsideAdr](bool holds) {
+    auto memories = plankton::Collect<MemoryAxiom>(*info.pre.now);
+    std::set<const SymbolDeclaration*> addresses;
+    for (const auto* elem : memories) addresses.insert(&elem->node->decl.get());
+    for (const auto& node : info.footprint.nodes) addresses.insert(&node.address);
+
+    for (auto it = addresses.begin(); it != addresses.end(); ++it) {
+        for (auto ot = std::next(it); ot != addresses.end(); ++ot) {
+            auto isAlias = info.encoding.Encode(**it) == info.encoding.Encode(**ot);
+            auto isDistinct = info.encoding.Encode(**it) != info.encoding.Encode(**ot);
+            info.encoding.AddCheck(isAlias, [&info,address=*it,other=*ot](bool holds) {
                 if (!holds) return;
-                info.outsideInsideAlias.emplace(out, in);
-                info.pre.Conjoin(MakeBinary<BinaryOperator::EQ>(*in, *out));
+                info.aliasMap[address].insert(other);
+                info.aliasMap[other].insert(address);
+                info.pre.Conjoin(MakeBinary<BinaryOperator::EQ>(*address, *other));
+                info.pre.Conjoin(MakeBinary<BinaryOperator::EQ>(*other, *address));
             });
-            info.encoding.AddCheck(isDistinct, [&info,in=&insideAdr,out=&outsideAdr](bool holds) {
+            info.encoding.AddCheck(isDistinct, [&info,address=*it,other=*ot](bool holds) {
                 if (!holds) return;
-                info.outsideInsideDistinct[out].insert(in);
-                info.pre.Conjoin(MakeBinary<BinaryOperator::NEQ>(*in, *out));
+                info.distinctMap[address].insert(other);
+                info.distinctMap[other].insert(address);
+                info.pre.Conjoin(MakeBinary<BinaryOperator::NEQ>(*address, *other));
+                info.pre.Conjoin(MakeBinary<BinaryOperator::NEQ>(*other, *address));
             });
         }
     }
@@ -275,9 +299,11 @@ inline void MinimizeFootprint(PostImageInfo& info) {
 inline std::unique_ptr<SharedMemoryCore> HandleSharedOutside(PostImageInfo& info, const SharedMemoryCore& outside) {
     auto& outsideAdr = outside.node->Decl();
     auto result = plankton::Copy(outside);
-    if (auto alias = info.outsideInsideAlias[&outsideAdr]) {
-        result->node->decl = *alias;
-        return result;
+    for (const auto* alias : info.aliasMap[&outsideAdr]) {
+        if (auto node = info.footprint.GetNodeOrNull(*alias)) {
+            result->node->decl = node->address;
+            break;
+        }
     }
     
     SymbolFactory factory(info.pre);
@@ -290,7 +316,7 @@ inline std::unique_ptr<SharedMemoryCore> HandleSharedOutside(PostImageInfo& info
     };
     
     for (const auto& inside : info.footprint.nodes) {
-        if (plankton::Membership(info.outsideInsideDistinct[&outsideAdr], &inside.address)) continue;
+        if (plankton::Membership(info.distinctMap[&outsideAdr], &inside.address)) continue;
         if (inside.HasUpdatedFlow()) updateFlow();
         for (const auto& field : inside.dataFields) if (field.HasUpdated()) updateField(field);
         for (const auto& field : inside.pointerFields) if (field.HasUpdated()) updateField(field);
@@ -313,7 +339,7 @@ inline std::unique_ptr<Annotation> ExtractPost(PostImageInfo&& info) {
     for (const auto* shared : outsideShared) {
         newMemory.push_back(HandleSharedOutside(info, *shared));
     }
-    
+
     // delete old memory/obligations/fulfillments
     struct : public LogicListener {
         bool result = false;
@@ -621,6 +647,7 @@ PostImage Solver::Post(std::unique_ptr<Annotation> pre, const MemoryWrite& cmd, 
         CheckInvariant(info);
         AddSpecificationChecks(info);
         AddAffectedOutsideChecks(info);
+        AddEffectContextGenerators(info);
         AddEffectContextGenerators(info);
         AddEffectPrecisionCheck(info);
         info.encoding.Check();

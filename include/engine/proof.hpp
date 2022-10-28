@@ -27,6 +27,8 @@ namespace plankton {
         void Visit(const Skip& object) override;
         void Visit(const Break& object) override;
         void Visit(const Assume& object) override;
+        void Visit(const AssertFlow& object) override;
+        void Visit(const AssumeFlow& object) override;
         void Visit(const Fail& object) override;
         void Visit(const Return& object) override;
         void Visit(const Malloc& object) override;
@@ -35,6 +37,8 @@ namespace plankton {
         void Visit(const ReleaseLock& object) override;
         void Visit(const VariableAssignment& object) override;
         void Visit(const MemoryWrite& object) override;
+        void Visit(const UpdateStub& object) override;
+        void Visit(const Suggestion& object) override;
         void Visit(const Function& object) override;
         void Visit(const Program& object) override;
 
@@ -51,6 +55,7 @@ namespace plankton {
         std::deque<std::pair<std::unique_ptr<Annotation>, const Return*>> returning;
         std::map<const Function*, std::deque<PrePostPair>> macroPostTable;
         bool insideAtomic;
+        bool firstRound;
         std::deque<std::unique_ptr<FutureSuggestion>> futureSuggestions;
 
         #define INFO_SIZE (" (" + std::to_string(current.size()) + ") ")

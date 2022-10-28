@@ -22,6 +22,10 @@ struct RightMoveVisitor : public BaseProgramVisitor {
     void Visit(const Fail& /*node*/) override { /* do nothing */ }
     void Visit(const Break& /*node*/) override { /* do nothing */ }
     void Visit(const Assume& node) override { node.condition->Accept(*this); }
+    void Visit(const AssertFlow& /*node*/) override  { /* do nothing */ }
+    void Visit(const AssumeFlow& /*node*/) override  { /* do nothing */ }
+    void Visit(const UpdateStub& /*node*/) override  { /* do nothing */ }
+    void Visit(const Suggestion& /*node*/) override  { /* do nothing */ }
     void Visit(const Return& node) override { for (const auto& expr : node.expressions) expr->Accept(*this); }
     void Visit(const Malloc& node) override { node.lhs->Accept(*this); }
     void Visit(const Macro& /*node*/) override { isRightMover = false; }

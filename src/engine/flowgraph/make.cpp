@@ -188,6 +188,7 @@ struct FlowGraphGenerator {
     
     inline std::size_t GetExpansionDepth(const FlowGraphNode& node, std::size_t remainingDepth) {
         auto handle = [this,&remainingDepth,&node](auto& field){
+            // if (!field.HasUpdated()) return;
             auto depth = graph.config.GetMaxFootprintDepth(node.address.type, field.name);
             remainingDepth = std::max(remainingDepth, depth);
         };
@@ -211,12 +212,14 @@ struct FlowGraphGenerator {
 
             bool publish = !node->postLocal;
             for (auto& field : node->pointerFields) {
+                if (plankton::IsOutflowFalse(node->address.type, field.name, graph.config)) continue;
                 for (auto mode : AllEMode) {
                     auto& nextAddress = field.Value(mode);
                     if (auto nextNode = TryGetOrCreateNode(nextAddress)) {
                         if (publish) nextNode->postLocal = false;
                         worklist.Add(depth - 1, *nextNode);
                     } else {
+                        // DEBUG("  -   missing " << node->address.name << "->" << field.name << " == " << nextAddress.name << std::endl)
                         missingFrontier.insert(&nextAddress);
                     }
                 }
@@ -224,13 +227,31 @@ struct FlowGraphGenerator {
         }
         return missingFrontier;
     }
-    
-    void CheckGraph() const {
-        // cyclic flow graphs are not supported // TODO: support cycles
+
+    void CheckGraphPhysical() const {
+        // no cycles involving root
         auto& root = graph.GetRoot();
         if (!graph.GetIncomingEdges(root, EMode::PRE).empty() ||
             !graph.GetIncomingEdges(root, EMode::POST).empty()) {
-            throw std::logic_error("Unsupported update: cyclic flow graphs are not supported");
+            throw std::logic_error("Unsupported update: cyclic flow graphs are not supported.");
+        }
+    }
+
+    void CheckGraphEffective() const {
+        // no non-empty-flow cycles involving root
+        auto& root = graph.GetRoot();
+        if (!graph.GetIncomingEffectiveEdges(root, EMode::PRE).empty() ||
+            !graph.GetIncomingEffectiveEdges(root, EMode::POST).empty()) {
+            throw std::logic_error("Unsupported update: effective-cyclic flow graphs are not supported.");
+        }
+    }
+
+    void CheckGraph() const {
+        // DEBUG("checking flow graph..." << std::endl)
+        switch (graph.config.GetGraphAcyclicity()) {
+            case SolverConfig::PHYSICAL: CheckGraphPhysical(); break;
+            case SolverConfig::EFFECTIVE: CheckGraphEffective(); break;
+            case SolverConfig::NONE: throw std::logic_error("Unsupported Acyclicity: 'none'.");
         }
     }
     
@@ -248,15 +269,18 @@ struct FlowGraphGenerator {
     inline void DeriveFrontierKnowledge(const std::set<const SymbolDeclaration*>& frontier) {
         // get new memory
         auto& flowType = graph.config.GetFlowValueType();
-        // for (auto elem : frontier) DEBUG("  missing " << elem->name << ": nonnull=" << encoding.Implies(encoding.EncodeIsNonNull(*elem)) << std::endl)
+        Encoding chk(graph);
+        // for (auto elem : frontier) {
+        //     DEBUG("  missing " << elem->name << ": nonnull=" << encoding.Implies(encoding.EncodeIsNonNull(*elem)) << std::endl)
+        //     DEBUG("          " << elem->name << ": nonnull=" << chk.Implies(chk.EncodeIsNonNull(*elem)) << std::endl)
+        //     assert(encoding.Implies(encoding.EncodeIsNonNull(*elem)) ? chk.Implies(chk.EncodeIsNonNull(*elem)) : true);
+        // }
         plankton::MakeMemoryAccessible(state, frontier, flowType, factory, encoding); // TODO: ensure that frontier is shared
         encoding.AddPremise(encoding.EncodeFormulaWithKnowledge(state, graph.config)); // for newly added memory
-        // encoding.AddPremise(encoding.EncodeInvariants(state, graph.config)); // for newly added memory
-        // encoding.AddPremise(encoding.EncodeSimpleFlowRules(state, graph.config)); // for newly added memory
-        // encoding.AddPremise(encoding.EncodeAcyclicity(state)); // for newly added memory
 
         // nodes with same address => same fields
         // prune duplicate memory
+        // DEBUG("  expanding stack..." << std::endl)
         plankton::ExtendStack(*graph.pre, encoding, ExtensionPolicy::POINTERS);
         assert(&state == graph.pre->now.get());
         plankton::InlineAndSimplify(*graph.pre);
@@ -272,11 +296,6 @@ struct FlowGraphGenerator {
 
             encoding.Push();
             encoding.AddPremise(encoding.EncodeFormulaWithKnowledge(state, graph.config));
-            // encoding.AddPremise(state);
-            // encoding.AddPremise(encoding.EncodeInvariants(state, graph.config));
-            // encoding.AddPremise(encoding.EncodeSimpleFlowRules(state, graph.config));
-            // encoding.AddPremise(encoding.EncodeAcyclicity(state));
-            // encoding.AddPremise(encoding.EncodeOwnership(state));
             assert(!encoding.ImpliesFalse());
 
             MakeRoot(root);
@@ -289,6 +308,8 @@ struct FlowGraphGenerator {
             encoding.Pop();
             graph.nodes.clear();
         }
+        DEBUG("** flow graph expanded **" << std::endl)
+        DEBUG(graph << std::endl)
         CheckGraph();
     }
 };
@@ -313,19 +334,21 @@ FlowGraph plankton::MakeFlowFootprint(std::unique_ptr<Annotation> pre, const Mem
         throw std::logic_error("Footprint construction failed: update to '" + plankton::ToString(*dereference) + "' not covered."); // TODO: better error handling
     }
     
-    DEBUG("Footprint: " << std::endl)
-    for (const auto& node : graph.nodes) {
-        DEBUG("   - Node " << node.address.name << std::endl)
-        for (const auto& next : node.pointerFields) {
-            DEBUG("      - " << node.address.name << "->" << next.name << " == " << next.preValue.get().name << " / "
-                             << next.postValue.get().name << std::endl)
-        }
-        // for (const auto& data : node.dataFields) {
-        //     DEBUG("      - " << node.address.name << "->" << data.name << " == " << data.preValue.get().name << " / "
-        //                      << data.postValue.get().name << std::endl)
-        // }
-    }
-    DEBUG("  with annotation: " << *graph.pre << std::endl)
+    // DEBUG("Footprint: " << std::endl)
+    // for (const auto& node : graph.nodes) {
+    //     DEBUG("   - Node " << node.address.name << std::endl)
+    //     for (const auto& next : node.pointerFields) {
+    //         DEBUG("      - " << node.address.name << "->" << next.name << " == " << next.preValue.get().name << " / "
+    //                          << next.postValue.get().name << std::endl)
+    //     }
+    //     // for (const auto& data : node.dataFields) {
+    //     //     DEBUG("      - " << node.address.name << "->" << data.name << " == " << data.preValue.get().name << " / "
+    //     //                      << data.postValue.get().name << std::endl)
+    //     // }
+    // }
+    // DEBUG("  with annotation: " << *graph.pre << std::endl)
+    // PrintFootprint(graph);
+    // DEBUG("flow graph construction successful." << std::endl)
     
     return graph;
 }

@@ -85,12 +85,16 @@ namespace plankton {
         [[nodiscard]] FlowGraphNode* GetNodeOrNull(const SymbolDeclaration& address);
         [[nodiscard]] const FlowGraphNode* GetNodeOrNull(const SymbolDeclaration& address) const;
         [[nodiscard]] std::vector<const PointerField*> GetIncomingEdges(const FlowGraphNode& node, EMode mode) const;
-        
+        [[nodiscard]] std::vector<const PointerField*> GetIncomingEffectiveEdges(const FlowGraphNode& node, EMode mode) const;
+        void Print(std::ostream& stream) const;
+
         private:
             explicit FlowGraph(std::unique_ptr<Annotation> pre, const SolverConfig& config);
             friend FlowGraph MakePureHeapGraph(std::unique_ptr<Annotation>, SymbolFactory&, const SolverConfig&);
             friend FlowGraph MakeFlowFootprint(std::unique_ptr<Annotation>, const MemoryWrite&, const SolverConfig&);
     };
+
+    std::ostream& operator<<(std::ostream& stream, const FlowGraph& object);
     
     [[nodiscard]] FlowGraph MakePureHeapGraph(std::unique_ptr<Annotation> state, SymbolFactory& factory, const SolverConfig& config);
     [[nodiscard]] FlowGraph MakeFlowFootprint(std::unique_ptr<Annotation> pre, const MemoryWrite& update, const SolverConfig& config);

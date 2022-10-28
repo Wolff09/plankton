@@ -45,6 +45,18 @@ void ProofGenerator::Visit(const Assume& cmd) {
     MakeInterferenceStable(cmd);
 }
 
+void ProofGenerator::Visit(const AssertFlow& cmd) {
+    INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
+    ApplyTransformer(MakePostTransformer(cmd, solver, timePost));
+    MakeInterferenceStable(cmd);
+}
+
+void ProofGenerator::Visit(const AssumeFlow& cmd) {
+    INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
+    ApplyTransformer(MakePostTransformer(cmd, solver, timePost));
+    MakeInterferenceStable(cmd);
+}
+
 void ProofGenerator::Visit(const AcquireLock &cmd) {
     INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
     ApplyTransformer(MakePostTransformer(cmd, solver, timePost));
@@ -72,6 +84,20 @@ void ProofGenerator::Visit(const VariableAssignment& cmd) {
 void ProofGenerator::Visit(const MemoryWrite& cmd) {
     INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
     ApplyTransformer(MakePostTransformer(cmd, solver, timePost));
+    MakeInterferenceStable(cmd);
+}
+
+void ProofGenerator::Visit(const UpdateStub& cmd) {
+    INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
+    ApplyTransformer(MakePostTransformer(cmd, solver, timePost));
+    MakeInterferenceStable(cmd);
+}
+
+void ProofGenerator::Visit(const Suggestion& cmd) {
+    INFO(infoPrefix << "Post for '" << cmd << "'." << INFO_SIZE << std::endl)
+    switch (cmd.hint) {
+        case Suggestion::JOIN: JoinCurrent(); break;
+    }
     MakeInterferenceStable(cmd);
 }
 

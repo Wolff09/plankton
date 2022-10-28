@@ -418,6 +418,10 @@ struct StatementBuilder : public PlanktonBaseVisitor {
     antlrcpp::Any visitCmdMalloc(PlanktonParser::CmdMallocContext* ctx) override { result = builder.MakeMalloc(*ctx); return nullptr; }
     antlrcpp::Any visitCmdAssume(PlanktonParser::CmdAssumeContext* ctx) override { result = builder.MakeAssume(*ctx->logicCondition()); return nullptr; }
     antlrcpp::Any visitCmdAssert(PlanktonParser::CmdAssertContext* ctx) override { result = builder.MakeAssert(*ctx->logicCondition()); return nullptr; }
+    antlrcpp::Any visitCmdAssertFlow(PlanktonParser::CmdAssertFlowContext* ctx) override { result = builder.MakeAssertFlow(*ctx); return nullptr; }
+    antlrcpp::Any visitCmdAssumeFlow(PlanktonParser::CmdAssumeFlowContext* ctx) override { result = builder.MakeAssumeFlow(*ctx); return nullptr; }
+    antlrcpp::Any visitCmdStub(PlanktonParser::CmdStubContext* ctx) override { result = builder.MakeStub(*ctx); return nullptr; }
+    antlrcpp::Any visitCmdJoin(PlanktonParser::CmdJoinContext* ctx) override { result = builder.MakeJoin(*ctx); return nullptr; }
     antlrcpp::Any visitCmdCall(PlanktonParser::CmdCallContext* ctx) override { result = builder.MakeCall(*ctx); return nullptr; }
     antlrcpp::Any visitCmdBreak(PlanktonParser::CmdBreakContext*) override { result = std::make_unique<Break>(); return nullptr; }
     antlrcpp::Any visitCmdReturnVoid(PlanktonParser::CmdReturnVoidContext* /*ctx*/) override { result = std::make_unique<Return>(); return nullptr; }
@@ -507,6 +511,31 @@ std::unique_ptr<Statement> AstBuilder::MakeAssume(PlanktonParser::LogicCondition
     auto result = std::make_unique<Choice>();
     plankton::MoveInto(std::move(branches.trueBranches), result->branches);
     return PostProcessDesugar(std::move(result));
+}
+
+std::unique_ptr<Statement> AstBuilder::MakeAssertFlow(PlanktonParser::CmdAssertFlowContext& ctx) {
+    auto val = MakeExpression(*ctx.val);;
+    auto obj = std::make_unique<VariableExpression>(VariableByName(ctx.flow->getText()));
+    return std::make_unique<AssertFlow>(std::move(val), std::move(obj));
+}
+
+std::unique_ptr<Statement> AstBuilder::MakeAssumeFlow(PlanktonParser::CmdAssumeFlowContext& ctx) {
+    auto val = MakeExpression(*ctx.val);;
+    auto obj = std::make_unique<VariableExpression>(VariableByName(ctx.flow->getText()));
+    return std::make_unique<AssumeFlow>(std::move(val), std::move(obj));
+}
+
+std::unique_ptr<Statement> AstBuilder::MakeStub(PlanktonParser::CmdStubContext& ctx) {
+    auto& type = TypeByName(ctx.typeName->getText());
+    auto name = ctx.fieldName->getText();
+    if (!type.GetField(name)) {
+        throw std::logic_error("Parse error: type '" + type.name + "' has no field named '" + name + "'.");
+    }
+    return std::make_unique<UpdateStub>(type, name);
+}
+
+std::unique_ptr<Statement> AstBuilder::MakeJoin(PlanktonParser::CmdJoinContext& /*ctx*/) {
+    return std::make_unique<Suggestion>(Suggestion::JOIN);
 }
 
 std::unique_ptr<Statement> AstBuilder::MakeCall(PlanktonParser::CmdCallContext& ctx) {

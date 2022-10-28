@@ -17,18 +17,12 @@ void ProofGenerator::GenerateProof() {
     // TODO: remove debug
     // newInterference = plankton::MakeTestInterference(*program.types.at(0));
     // ConsolidateNewInterference();
-
-    // auto [annotation, command] = plankton::MakeTestState(program);
-    // for (std::size_t index = 0; index < 5; ++index){
-    //     Timer timer("test");
-    //     auto measurement = timer.Measure();
-    //     auto post = solver.Post(plankton::Copy(*annotation), *command, false);
-    // }
     // throw std::logic_error("---point du break---");
     // TODO: check initializer
 
     INFO(infoPrefix << "Proof generation for '" << program.name << "' initiated." << std::endl)
     INFO(infoPrefix << "Starting with empty interference set." << std::endl)
+    futureSuggestions.clear(); // TODO: remove <<<<<<<<<<<<<<<<<<<<<<<<<<=====================================================================||||||||||||||||
     if (futureSuggestions.empty()) {
         INFO(infoPrefix << "Using no future suggestions." << std::endl)
     } else {
@@ -37,12 +31,13 @@ void ProofGenerator::GenerateProof() {
     }
 
     // check API functions
+    firstRound = true;
     for (std::size_t counter = 0; counter < setup.proofMaxIterations; ++counter) {
         infoPrefix.Push("iter-", counter);
         INFO(infoPrefix << "Starting iteration " << counter << " of fixed-point iteration..." << std::endl)
 
         program.Accept(*this);
-        if (!ConsolidateNewInterference()) {
+        if (!ConsolidateNewInterference() & !firstRound) {
             INFO(infoPrefix << "Fixed-point reached." << std::endl)
             infoPrefix.Pop();
             INFO(infoPrefix << "Proof generation was successful!" << std::endl)
@@ -52,6 +47,8 @@ void ProofGenerator::GenerateProof() {
 
         macroPostTable.clear();
         infoPrefix.Pop();
+        if (!firstRound) throw std::logic_error("--- breakpoint ---");
+        firstRound = false;
     }
     throw std::logic_error("Aborting: proof does not seem to stabilize."); // TODO: remove / better error handling
 }
@@ -177,6 +174,9 @@ void ProofGenerator::HandleInterfaceFunction(const Function& function) {
     // check post annotations
     if (isMaintenance) {
         DEBUG(std::endl << std::endl << "=== NO POST CHECK " << function.name << std::endl)
+    } else if (firstRound) {
+        INFO(infoPrefix << "Skipping linearizability check for function '" << function.name << "' in first round" << std::endl)
+        DEBUG(std::endl << std::endl << "=== NO POST CHECK " << function.name << std::endl)
     } else {
         INFO(infoPrefix << "Checking linearizability of function '" << function.name << "'..." << std::endl)
         DEBUG(std::endl << std::endl << "=== CHECKING POST ANNOTATION OF " << function.name << "  " << returning.size() << std::endl)
@@ -192,6 +192,7 @@ void ProofGenerator::HandleInterfaceFunction(const Function& function) {
             throw std::logic_error(
                     "Could not establish linearizability for function '" + function.name + "'."); // TODO: better error handling
         }
+        // throw std::logic_error("--- breakpoint lin ---");
     }
     infoPrefix.Pop();
 }

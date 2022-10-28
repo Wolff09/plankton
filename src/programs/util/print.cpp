@@ -22,10 +22,14 @@ constexpr std::string_view CMD_BREAK = "break";
 constexpr std::string_view CMD_RETURN = "return";
 constexpr std::string_view CMD_ASSUME = "assume";
 constexpr std::string_view CMD_ASSERT = "assert";
+constexpr std::string_view CMD_ASSERT_FLOW = "assertFlow";
+constexpr std::string_view CMD_ASSUME_FLOW = "assumeFlow";
 constexpr std::string_view CMD_LOCK = "__lock__";
 constexpr std::string_view CMD_UNLOCK = "__unlock__";
 constexpr std::string_view CMD_MALLOC = "malloc";
 constexpr std::string_view CMD_SIZEOF = "__sizeof__";
+constexpr std::string_view CMD_STUB = "@stub";
+constexpr std::string_view CMD_JOIN = "@join";
 constexpr std::string_view STMT_ATOMIC = "atomic";
 constexpr std::string_view STMT_LOOP = "while (true)";
 constexpr std::string_view STMT_CHOICE = "choose";
@@ -103,6 +107,20 @@ struct CommandPrinter : public ExpressionPrinter {
         object.condition->Accept(*this);
         stream << ");" << lineEnd;
     }
+    void Visit(const AssertFlow& object) override {
+        stream << CMD_ASSERT_FLOW << "(";
+        object.value->Accept(*this);
+        stream << ", ";
+        object.object->Accept(*this);
+        stream << ");" << lineEnd;
+    }
+    void Visit(const AssumeFlow& object) override {
+        stream << CMD_ASSUME_FLOW << "(";
+        object.value->Accept(*this);
+        stream << ", ";
+        object.object->Accept(*this);
+        stream << ");" << lineEnd;
+    }
     void Visit(const Fail& /*object*/) override {
         stream << CMD_ASSERT << "(" << LITERAL_FALSE << ");" << lineEnd;
     }
@@ -131,6 +149,14 @@ struct CommandPrinter : public ExpressionPrinter {
     }
     void Visit(const VariableAssignment& object) override { HandleAssignment(object); }
     void Visit(const MemoryWrite& object) override { HandleAssignment(object); }
+    void Visit(const UpdateStub& object) override {
+        stream << CMD_STUB << " " << object.type.get().name << "::" << object.field << ";" << lineEnd;
+    }
+    void Visit(const Suggestion& object) override {
+        switch (object.hint) {
+            case Suggestion::JOIN: stream << CMD_JOIN << ";" << lineEnd; break;
+        }
+    }
     void Visit(const AcquireLock& object) override {
         stream << CMD_LOCK << "(";
         object.lock->Accept(*this);
@@ -272,11 +298,15 @@ void plankton::Print(const AstNode& object, std::ostream& stream) {
         void Visit(const Break& object) override { PrintCommand(object); }
         void Visit(const Return& object) override { PrintCommand(object); }
         void Visit(const Assume& object) override { PrintCommand(object); }
+        void Visit(const AssertFlow& object) override { PrintCommand(object); }
+        void Visit(const AssumeFlow& object) override { PrintCommand(object); }
         void Visit(const Fail& object) override { PrintCommand(object); }
         void Visit(const Malloc& object) override { PrintCommand(object); }
         void Visit(const Macro& object) override { PrintCommand(object); }
         void Visit(const VariableAssignment& object) override { PrintCommand(object); }
         void Visit(const MemoryWrite& object) override { PrintCommand(object); }
+        void Visit(const UpdateStub& object) override { PrintCommand(object); }
+        void Visit(const Suggestion& object) override { PrintCommand(object); }
         void Visit(const AcquireLock& object) override { PrintCommand(object); }
         void Visit(const ReleaseLock& object) override { PrintCommand(object); }
         void Visit(const Scope& object) override { PrintProgram(object); }

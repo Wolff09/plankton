@@ -93,7 +93,8 @@ namespace plankton {
         EExpr EncodeMemoryEquality(const MemoryAxiom& memory, const MemoryAxiom& other);
         EExpr EncodeInvariants(const Formula& formula, const SolverConfig& config);
         EExpr EncodeSimpleFlowRules(const Formula& formula, const SolverConfig& config);
-        EExpr EncodeAcyclicity(const Formula& formula);
+        EExpr EncodeAcyclicity(const Formula& formula, const SolverConfig& config);
+        EExpr EncodeOutflowContains(const MemoryAxiom& memory, const std::string& field, const EExpr& value, const SolverConfig& config);
         EExpr EncodeOwnership(const Formula& formula);
         EExpr EncodeFormulaWithKnowledge(const Formula& formula, const SolverConfig& config);
         

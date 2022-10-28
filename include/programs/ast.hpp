@@ -265,6 +265,22 @@ namespace plankton {
         explicit Assume(std::unique_ptr<BinaryExpression> condition);
         ACCEPT_PROGRAM_VISITOR
     };
+
+    struct AssertFlow final : public Command {
+        std::unique_ptr<SimpleExpression> value;
+        std::unique_ptr<VariableExpression> object;
+
+        explicit AssertFlow(std::unique_ptr<SimpleExpression> value, std::unique_ptr<VariableExpression> object);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct AssumeFlow final : public Command {
+        std::unique_ptr<SimpleExpression> value;
+        std::unique_ptr<VariableExpression> object;
+
+        explicit AssumeFlow(std::unique_ptr<SimpleExpression> value, std::unique_ptr<VariableExpression> object);
+        ACCEPT_PROGRAM_VISITOR
+    };
     
     struct Malloc final : public Command {
         std::unique_ptr<VariableExpression> lhs;
@@ -315,6 +331,23 @@ namespace plankton {
     
     struct MemoryWrite final : public Assignment<Dereference, SimpleExpression> {
         using Assignment::Assignment;
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct UpdateStub : public Command {
+        std::reference_wrapper<const Type> type;
+        std::string field;
+
+        explicit UpdateStub(const Type& type, const std::string& field);
+        ACCEPT_PROGRAM_VISITOR
+    };
+
+    struct Suggestion : public Command {
+        enum Hint {
+            JOIN
+        } hint;
+
+        explicit Suggestion(Hint hint);
         ACCEPT_PROGRAM_VISITOR
     };
     

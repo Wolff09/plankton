@@ -6,16 +6,27 @@ using namespace plankton;
 
 
 HeapEffect::HeapEffect(std::unique_ptr<SharedMemoryCore> before, std::unique_ptr<SharedMemoryCore> after,
-                       std::unique_ptr<Formula> ctx) : pre(std::move(before)), post(std::move(after)),
-                                                       context(std::move(ctx)) {
+                       std::unique_ptr<Formula> ctx, std::vector<std::unique_ptr<BinaryExpression>> haloCtx)
+        : pre(std::move(before)), post(std::move(after)), context(std::move(ctx)), halo{std::move(haloCtx)} {
     assert(pre);
     assert(post);
     assert(pre->node->Decl() == post->node->Decl());
     assert(context);
+    assert(plankton::AllNonNull(halo));
 }
 
+HeapEffect::HeapEffect(std::unique_ptr<SharedMemoryCore> before, std::unique_ptr<SharedMemoryCore> after, std::unique_ptr<Formula> ctx)
+        : HeapEffect(std::move(before), std::move(after), std::move(ctx), {}) {}
+
 std::ostream& plankton::operator<<(std::ostream& out, const HeapEffect& object) {
-    out << "[ " << *object.pre << " ~~> " << *object.post << " | " << *object.context << " ]";
+    out << "[ " << *object.pre << " ~~> " << *object.post << " | " << *object.context << " |";
+    bool first = true;
+    for (const auto& elem : object.halo) {
+        if (!first) out << ",";
+        out << " " << *elem;
+        first = false;
+    }
+    out << " ]";
     return out;
 }
 
@@ -30,14 +41,14 @@ PostImage::PostImage(std::deque<std::unique_ptr<Annotation>> posts) : annotation
     assert(plankton::AllNonNull(annotations));
 }
 
-PostImage::PostImage(std::unique_ptr<Annotation> post, std::deque<std::unique_ptr<HeapEffect>> effects) : effects(std::move(effects)) {
+PostImage::PostImage(std::unique_ptr<Annotation> post, std::deque<std::unique_ptr<HeapEffect>> effects_) : effects(std::move(effects_)) {
     assert(post);
     annotations.push_back(std::move(post));
     assert(plankton::AllNonNull(effects));
 }
 
-PostImage::PostImage(std::deque<std::unique_ptr<Annotation>> posts, std::deque<std::unique_ptr<HeapEffect>> effects)
-        : annotations(std::move(posts)), effects(std::move(effects)) {
+PostImage::PostImage(std::deque<std::unique_ptr<Annotation>> posts, std::deque<std::unique_ptr<HeapEffect>> effects_)
+        : annotations(std::move(posts)), effects(std::move(effects_)) {
     assert(plankton::AllNonNull(annotations));
     assert(plankton::AllNonNull(effects));
 }

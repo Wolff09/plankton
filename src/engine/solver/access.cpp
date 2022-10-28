@@ -23,6 +23,8 @@ inline void CheckVariableAccess(const Command& command, const Annotation& annota
 struct DereferenceCollector : public ProgramListener {
     std::set<const VariableDeclaration*> result;
     void Enter(const Dereference& object) override { result.insert(&object.variable->Decl()); }
+    void Enter(const AssertFlow& object) override { result.insert(&object.object->Decl()); }
+    void Enter(const AssumeFlow& object) override { result.insert(&object.object->Decl()); }
 };
 
 inline void CheckMemoryAccess(const Command& command, const Annotation& annotation) {

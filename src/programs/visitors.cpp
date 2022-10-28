@@ -26,11 +26,15 @@ void BaseProgramVisitor::Visit(const Skip& /*object*/) { COMPLAIN(BaseProgramVis
 void BaseProgramVisitor::Visit(const Break& /*object*/) { COMPLAIN(BaseProgramVisitor, const Break&); }
 void BaseProgramVisitor::Visit(const Return& /*object*/) { COMPLAIN(BaseProgramVisitor, const Return&); }
 void BaseProgramVisitor::Visit(const Assume& /*object*/) { COMPLAIN(BaseProgramVisitor, const Assume&); }
+void BaseProgramVisitor::Visit(const AssertFlow& /*object*/) { COMPLAIN(BaseProgramVisitor, const AssertFlow&); }
+void BaseProgramVisitor::Visit(const AssumeFlow& /*object*/) { COMPLAIN(BaseProgramVisitor, const AssumeFlow&); }
 void BaseProgramVisitor::Visit(const Fail& /*object*/) { COMPLAIN(BaseProgramVisitor, const Fail&); }
 void BaseProgramVisitor::Visit(const Malloc& /*object*/) { COMPLAIN(BaseProgramVisitor, const Malloc&); }
 void BaseProgramVisitor::Visit(const Macro& /*object*/) { COMPLAIN(BaseProgramVisitor, const Macro&); }
 void BaseProgramVisitor::Visit(const VariableAssignment& /*object*/) { COMPLAIN(BaseProgramVisitor, const VariableAssignment&); }
 void BaseProgramVisitor::Visit(const MemoryWrite& /*object*/) { COMPLAIN(BaseProgramVisitor, const MemoryWrite&); }
+void BaseProgramVisitor::Visit(const UpdateStub& /*object*/) { COMPLAIN(BaseProgramVisitor, const UpdateStub&); }
+void BaseProgramVisitor::Visit(const Suggestion& /*object*/) { COMPLAIN(BaseProgramVisitor, const Suggestion&); }
 void BaseProgramVisitor::Visit(const AcquireLock& /*object*/) { COMPLAIN(BaseProgramVisitor, const AcquireLock&); }
 void BaseProgramVisitor::Visit(const ReleaseLock& /*object*/) { COMPLAIN(BaseProgramVisitor, const ReleaseLock&); }
 void BaseProgramVisitor::Visit(const Scope& /*object*/) { COMPLAIN(BaseProgramVisitor, const Scope&); }
@@ -53,11 +57,15 @@ void MutableBaseProgramVisitor::Visit(Skip& /*object*/) { COMPLAIN(MutableBasePr
 void MutableBaseProgramVisitor::Visit(Break& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Break&); }
 void MutableBaseProgramVisitor::Visit(Return& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Return&); }
 void MutableBaseProgramVisitor::Visit(Assume& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Assume&); }
+void MutableBaseProgramVisitor::Visit(AssertFlow& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, AssertFlow&); }
+void MutableBaseProgramVisitor::Visit(AssumeFlow& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, AssumeFlow&); }
 void MutableBaseProgramVisitor::Visit(Fail& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Fail&); }
 void MutableBaseProgramVisitor::Visit(Malloc& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Malloc&); }
 void MutableBaseProgramVisitor::Visit(Macro& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Macro&); }
 void MutableBaseProgramVisitor::Visit(VariableAssignment& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, VariableAssignment&); }
 void MutableBaseProgramVisitor::Visit(MemoryWrite& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, MemoryWrite&); }
+void MutableBaseProgramVisitor::Visit(UpdateStub& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, UpdateStub&); }
+void MutableBaseProgramVisitor::Visit(Suggestion& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Suggestion&); }
 void MutableBaseProgramVisitor::Visit(AcquireLock& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, AcquireLock&); }
 void MutableBaseProgramVisitor::Visit(ReleaseLock& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, ReleaseLock&); }
 void MutableBaseProgramVisitor::Visit(Scope& /*object*/) { COMPLAIN(MutableBaseProgramVisitor, Scope&); }
@@ -81,11 +89,15 @@ void DefaultProgramVisitor::Visit(const Skip& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Break& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Return& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Assume& /*object*/) { /* do nothing */ }
+void DefaultProgramVisitor::Visit(const AssertFlow& /*object*/) { /* do nothing */ }
+void DefaultProgramVisitor::Visit(const AssumeFlow& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Fail& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Malloc& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Macro& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const VariableAssignment& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const MemoryWrite& /*object*/) { /* do nothing */ }
+void DefaultProgramVisitor::Visit(const UpdateStub& /*object*/) { /* do nothing */ }
+void DefaultProgramVisitor::Visit(const Suggestion& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const AcquireLock& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const ReleaseLock& /*object*/) { /* do nothing */ }
 void DefaultProgramVisitor::Visit(const Scope& /*object*/) { /* do nothing */ }
@@ -108,11 +120,15 @@ void MutableDefaultProgramVisitor::Visit(Skip& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Break& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Return& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Assume& /*object*/) { /* do nothing */ }
+void MutableDefaultProgramVisitor::Visit(AssertFlow& /*object*/) { /* do nothing */ }
+void MutableDefaultProgramVisitor::Visit(AssumeFlow& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Fail& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Malloc& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Macro& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(VariableAssignment& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(MemoryWrite& /*object*/) { /* do nothing */ }
+void MutableDefaultProgramVisitor::Visit(UpdateStub& /*object*/) { /* do nothing */ }
+void MutableDefaultProgramVisitor::Visit(Suggestion& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(AcquireLock& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(ReleaseLock& /*object*/) { /* do nothing */ }
 void MutableDefaultProgramVisitor::Visit(Scope& /*object*/) { /* do nothing */ }
@@ -137,11 +153,15 @@ void ProgramListener::Enter(const Skip& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Break& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Return& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Assume& /*object*/) { /* do nothing */ }
+void ProgramListener::Enter(const AssertFlow& /*object*/) { /* do nothing */ }
+void ProgramListener::Enter(const AssumeFlow& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Fail& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Malloc& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Macro& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const VariableAssignment& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const MemoryWrite& /*object*/) { /* do nothing */ }
+void ProgramListener::Enter(const UpdateStub& /*object*/) { /* do nothing */ }
+void ProgramListener::Enter(const Suggestion& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const AcquireLock& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const ReleaseLock& /*object*/) { /* do nothing */ }
 void ProgramListener::Enter(const Scope& /*object*/) { /* do nothing */ }
@@ -166,11 +186,15 @@ void MutableProgramListener::Enter(Skip& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Break& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Return& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Assume& /*object*/) { /* do nothing */ }
+void MutableProgramListener::Enter(AssertFlow& /*object*/) { /* do nothing */ }
+void MutableProgramListener::Enter(AssumeFlow& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Fail& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Malloc& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Macro& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(VariableAssignment& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(MemoryWrite& /*object*/) { /* do nothing */ }
+void MutableProgramListener::Enter(UpdateStub& /*object*/) { /* do nothing */ }
+void MutableProgramListener::Enter(Suggestion& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(AcquireLock& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(ReleaseLock& /*object*/) { /* do nothing */ }
 void MutableProgramListener::Enter(Scope& /*object*/) { /* do nothing */ }
@@ -188,6 +212,8 @@ void ProgramListener::Visit(const MaxValue& object) { Enter(object); }
 void ProgramListener::Visit(const NullValue& object) { Enter(object); }
 void ProgramListener::Visit(const Skip& object) { Enter(object); }
 void ProgramListener::Visit(const Break& object) { Enter(object); }
+void ProgramListener::Visit(const UpdateStub& object) { Enter(object); }
+void ProgramListener::Visit(const Suggestion& object) { Enter(object); }
 void ProgramListener::Visit(const VariableExpression& object) {
     Enter(object);
     Enter(object.Decl());
@@ -208,6 +234,16 @@ void ProgramListener::Visit(const Return& object) {
 void ProgramListener::Visit(const Assume& object) {
     Enter(object);
     object.condition->Accept(*this);
+}
+void ProgramListener::Visit(const AssertFlow& object) {
+    Enter(object);
+    object.value->Accept(*this);
+    object.object->Accept(*this);
+}
+void ProgramListener::Visit(const AssumeFlow& object) {
+    Enter(object);
+    object.value->Accept(*this);
+    object.object->Accept(*this);
 }
 void ProgramListener::Visit(const Fail& object) {
     Enter(object);
@@ -279,6 +315,8 @@ void MutableProgramListener::Visit(MaxValue& object) { Enter(object); }
 void MutableProgramListener::Visit(NullValue& object) { Enter(object); }
 void MutableProgramListener::Visit(Skip& object) { Enter(object); }
 void MutableProgramListener::Visit(Break& object) { Enter(object); }
+void MutableProgramListener::Visit(UpdateStub& object) { Enter(object); }
+void MutableProgramListener::Visit(Suggestion& object) { Enter(object); }
 void MutableProgramListener::Visit(VariableExpression& object) {
     Enter(object);
     Enter(object.Decl());
@@ -299,6 +337,16 @@ void MutableProgramListener::Visit(Return& object) {
 void MutableProgramListener::Visit(Assume& object) {
     Enter(object);
     object.condition->Accept(*this);
+}
+void MutableProgramListener::Visit(AssertFlow& object) {
+    Enter(object);
+    object.value->Accept(*this);
+    object.object->Accept(*this);
+}
+void MutableProgramListener::Visit(AssumeFlow& object) {
+    Enter(object);
+    object.value->Accept(*this);
+    object.object->Accept(*this);
 }
 void MutableProgramListener::Visit(Fail& object) {
     Enter(object);

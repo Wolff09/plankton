@@ -264,7 +264,7 @@ EExpr Encoding::EncodeFormulaWithKnowledge(const Formula& formula, const SolverC
            && EncodeInvariants(formula, config)
            && EncodeSimpleFlowRules(formula, config)
            && EncodeOwnership(formula)
-           && EncodeAcyclicity(formula)
+           && EncodeAcyclicity(formula, config)
            ;
 }
 
@@ -281,22 +281,29 @@ EExpr Encoding::EncodeInvariants(const Formula& formula, const SolverConfig& con
     return MakeAnd(result);
 }
 
-EExpr Encoding::EncodeAcyclicity(const Formula& formula) {
-    auto reachability = plankton::ComputeReachability(formula);
-    std::vector<EExpr> result;
-    result.reserve(reachability.container.size());
+inline EExpr EncodeAcyclicityFromReach(Encoding& encoding, const ReachSet& reachability) {
+    auto result = plankton::MakeVector<EExpr>(reachability.container.size());
     for (const auto& [node, reach] : reachability.container) {
-        // std::vector<EExpr> distinct;
-        // distinct.reserve(reach.size() + 1);
-        // distinct.push_back(Encode(*node));
-        // for (const auto* other : reach) distinct.push_back(Encode(*other));
-        // result.push_back(MakeDistinct(distinct));
-        auto distinct = Encode(*node);
+        auto distinct = encoding.Encode(*node);
         for (const auto* other : reach) {
-            result.push_back(distinct != Encode(*other));
+            result.push_back(distinct != encoding.Encode(*other));
         }
     }
-    return MakeAnd(result);
+    return encoding.MakeAnd(result);
+}
+
+EExpr Encoding::EncodeAcyclicity(const Formula& formula, const SolverConfig& config) {
+    switch (config.GetGraphAcyclicity()) {
+        case SolverConfig::PHYSICAL: return EncodeAcyclicityFromReach(*this, plankton::ComputeReachability(formula));
+        case SolverConfig::EFFECTIVE: return EncodeAcyclicityFromReach(*this, plankton::ComputeEffectiveReachability(formula, config));
+        case SolverConfig::NONE: return Bool(true);
+    }
+}
+
+EExpr Encoding::EncodeOutflowContains(const MemoryAxiom& memory, const std::string& field, const EExpr& value, const SolverConfig& config) {
+    auto& dummy = SymbolFactory(memory).GetFreshFO(memory.flow->GetType());
+    auto predicate = config.GetOutflowContains(memory, field, dummy);
+    return Replace(Encode(*predicate), Encode(dummy), value);
 }
 
 EExpr Encoding::EncodeOwnership(const Formula& formula) {

@@ -1,6 +1,7 @@
 #include "engine/flowgraph.hpp"
 
 #include "util/shortcuts.hpp"
+#include "engine/util.hpp"
 
 using namespace plankton;
 
@@ -8,6 +9,26 @@ using namespace plankton;
 //
 // Flow graph basics
 //
+
+
+void FlowGraph::Print(std::ostream& stream) const {
+    stream << "Footprint: " << std::endl;
+    for (const auto& node : nodes) {
+        stream << "   - Node " << node.address.name << std::endl;
+        for (const auto& next : node.pointerFields) {
+            stream << "      - " << node.address.name << "->" << next.name << " == " << next.preValue.get().name << " / " << next.postValue.get().name << std::endl;
+        }
+        for (const auto& data : node.dataFields) {
+            stream << "      - " << node.address.name << "->" << data.name << " == " << data.preValue.get().name << " / " << data.postValue.get().name << std::endl;
+        }
+    }
+    stream << "  with annotation: " << *pre << std::endl;
+}
+
+std::ostream& plankton::operator<<(std::ostream& stream, const FlowGraph& object) {
+    object.Print(stream);
+    return stream;
+}
 
 template<typename T>
 inline T& Switch(EMode mode, T& pre, T& post) {
@@ -153,6 +174,22 @@ std::vector<const PointerField*> FlowGraph::GetIncomingEdges(const FlowGraphNode
 
     for (const auto& node : nodes) {
         for (const auto& field : node.pointerFields) {
+            auto next = GetNodeOrNull(field.Value(mode));
+            if (!next || next != &target) continue;
+            result.push_back(&field);
+        }
+    }
+
+    return result;
+}
+
+std::vector<const PointerField*> FlowGraph::GetIncomingEffectiveEdges(const FlowGraphNode& target, EMode mode) const {
+    // TODO: avoid code duplication
+    std::vector<const PointerField*> result;
+
+    for (const auto& node : nodes) {
+        for (const auto& field : node.pointerFields) {
+            if (plankton::IsOutflowFalse(node.address.type, field.name, config)) continue;
             auto next = GetNodeOrNull(field.Value(mode));
             if (!next || next != &target) continue;
             result.push_back(&field);
