@@ -39,20 +39,13 @@ struct InterferenceInfo {
     inline EExpr EncodePreHalo(Encoding& encoding, const HeapEffect& effect) const {
         auto result = plankton::MakeVector<EExpr>(effect.preHalo.size());
         for (const auto& expr : effect.preHalo) {
-            if (auto eqExpr = dynamic_cast<const SymbolicHeapEquality*>(expr.get())) {
-                auto mem = plankton::TryGetResource(eqExpr->lhsSymbol->Decl(), *annotation->now);
-                if (!mem) continue;
-                StackAxiom tmp(eqExpr->op, std::make_unique<SymbolicVariable>(mem->fieldToValue.at(eqExpr->lhsFieldName)->Decl()),
-                               plankton::Copy(*eqExpr->rhs));
-                result.push_back(encoding.Encode(tmp));
-            } else if (auto flExpr = dynamic_cast<const SymbolicHeapFlow*>(expr.get())) {
-                auto mem = plankton::TryGetResource(flExpr->symbol->Decl(), *annotation->now);
-                if (!mem) continue;
-                InflowEmptinessAxiom tmp(flExpr->symbol->Decl(), flExpr->isEmpty);
-                result.push_back(encoding.Encode(tmp));
-            } else {
-                throw std::logic_error("Internal error: failed to process interference.");
-            }
+            auto symbolic = plankton::TryMakeSymbolic(*expr, [this](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
+                auto* resource = plankton::TryGetResource(adr, *annotation->now);
+                if (resource) return plankton::Copy(*resource);
+                return nullptr;
+            });
+            if (!symbolic) continue;
+            result.push_back(encoding.Encode(*symbolic));
         }
         return encoding.MakeAnd(result);
     }

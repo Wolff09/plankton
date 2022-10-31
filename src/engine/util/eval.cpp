@@ -72,3 +72,40 @@ const SymbolDeclaration& plankton::Evaluate(const VariableExpression& variable, 
 const SymbolDeclaration& plankton::Evaluate(const Dereference& dereference, const Formula& state) {
     return EvaluateOrFail(dereference, state);
 }
+
+// struct EvalHeapVisitor : public EffectVisitor {
+//     const MemoryLookup& adrToMem;
+//     std::unique_ptr<MemoryAxiom> result;
+//     explicit EvalHeapVisitor(const MemoryLookup& adrToMem) : adrToMem(adrToMem) {}
+//     void Visit(const plankton::SymbolicHeapFlow &obj) override { result = adrToMem(obj.symbol->Decl()); }
+//     void Visit(const plankton::SymbolicHeapEquality &obj) override { result = adrToMem(obj.lhsSymbol->Decl()); }
+// };
+//
+// std::unique_ptr<MemoryAxiom> plankton::GetResource(const SymbolicHeapExpression& expr, const MemoryLookup& adrToMem) {
+//     EvalHeapVisitor visitor(adrToMem);
+//     expr.Accept(visitor);
+//     return std::move(visitor.result);
+// }
+
+struct EvalHeapEvaluator : public EffectVisitor {
+    const MemoryLookup& adrToMem;
+    std::unique_ptr<Formula> result;
+    explicit EvalHeapEvaluator(const MemoryLookup& adrToMem) : adrToMem(adrToMem) {}
+    void Visit(const plankton::SymbolicHeapFlow &obj) override {
+        auto mem = adrToMem(obj.symbol->Decl());
+        if (!mem) return;
+        result = std::make_unique<InflowEmptinessAxiom>(mem->flow->Decl(), obj.isEmpty);
+    }
+    void Visit(const plankton::SymbolicHeapEquality &obj) override {
+        auto mem = adrToMem(obj.lhsSymbol->Decl());
+        if (!mem) return;
+        auto& symbol = mem->fieldToValue.at(obj.lhsFieldName)->Decl();
+        result = std::make_unique<StackAxiom>(obj.op, std::make_unique<SymbolicVariable>(symbol), plankton::Copy(*obj.rhs));
+    }
+};
+
+std::unique_ptr<Formula> plankton::TryMakeSymbolic(const SymbolicHeapExpression& expression, const MemoryLookup& adrToMem) {
+    EvalHeapEvaluator eval(adrToMem);
+    expression.Accept(eval);
+    return std::move(eval.result);
+}

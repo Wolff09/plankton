@@ -467,37 +467,15 @@ inline void AddEffectContextGenerators(PostImageInfo& info) {
     }
 }
 
-struct ExtractionHeapTranslator : public EffectVisitor {
-    PostImageInfo& info;
-    EMode mode;
-    explicit ExtractionHeapTranslator(PostImageInfo& info, EMode mode) : info(info), mode(mode) {}
-    std::unique_ptr<Formula> result;
-
-    struct MemContainer {
-        std::unique_ptr<MemoryAxiom> storage;
-        const MemoryAxiom* memory;
-        explicit MemContainer(std::unique_ptr<MemoryAxiom> mem) : storage(std::move(mem)), memory(storage.get()) {}
-        explicit MemContainer(const MemoryAxiom* mem) : memory(mem) {}
+MemoryLookup MakeMemLookup(const PostImageInfo& info, EMode mode) {
+    return [&info,mode](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
+        auto* node = info.footprint.GetNodeOrNull(adr);
+        if (node) return node->ToLogic(mode);
+        auto* resource = plankton::TryGetResource(adr, *info.pre.now);
+        if (resource) return plankton::Copy(*resource);
+        return nullptr;
     };
-    std::optional<MemContainer> GetMemory(const SymbolDeclaration& address) {
-        auto* node = info.footprint.GetNodeOrNull(address);
-        if (node) return MemContainer(node->ToLogic(mode));
-        auto* resource = plankton::TryGetResource(address, *info.pre.now);
-        if (resource) return MemContainer(resource);
-        return std::nullopt;
-    }
-    void Visit(const SymbolicHeapEquality& obj) override {
-        auto mem = GetMemory(obj.lhsSymbol->Decl());
-        if (!mem) return;
-        auto& value = mem->memory->fieldToValue.at(obj.lhsFieldName);
-        result = std::make_unique<StackAxiom>(obj.op, plankton::Copy(*value), plankton::Copy(*obj.rhs));
-    }
-    void Visit(const SymbolicHeapFlow& obj) override {
-        auto mem = GetMemory(obj.symbol->Decl());
-        if (!mem) return;
-        result = std::make_unique<InflowEmptinessAxiom>(mem->memory->flow->Decl(), obj.isEmpty);
-    }
-};
+}
 
 inline void AddEffectHaloGenerators(PostImageInfo& info) {
     auto symbols = GetFootprintSymbols(info.footprint);
@@ -505,10 +483,9 @@ inline void AddEffectHaloGenerators(PostImageInfo& info) {
         for (const auto *decl: symbols) {
             for (auto&& generator: GetHaloGenerators(*decl)) {
                 auto candidate = generator();
-                ExtractionHeapTranslator translator(info, mode);
-                candidate->Accept(translator);
-                if (!translator.result) continue;
-                auto candidateEncoded = info.encoding.Encode(*translator.result);
+                auto candidateSymbolic = plankton::TryMakeSymbolic(*candidate, MakeMemLookup(info, mode));
+                if (!candidateSymbolic) continue;
+                auto candidateEncoded = info.encoding.Encode(*candidateSymbolic);
                 info.encoding.AddCheck(candidateEncoded, [decl, generator, &info, mode](bool holds) {
                     if (!holds) return;
                     switch (mode) {

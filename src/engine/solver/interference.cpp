@@ -65,30 +65,11 @@ struct MemoryMap {
     }
 };
 
-struct InterferenceHeapTranslator : public EffectVisitor {
-    Encoding& encoding;
-    MemoryMap& memMap;
-    std::optional<EExpr> result = std::nullopt;
-    explicit InterferenceHeapTranslator(Encoding& encoding, MemoryMap& memMap) : encoding(encoding), memMap(memMap) {}
-
-    void Visit(const SymbolicHeapEquality& obj) override {
-        auto& mem = memMap.Get(obj.lhsSymbol->Decl());
-        auto value = std::make_unique<SymbolicVariable>(mem.fieldToValue.at(obj.lhsFieldName)->Decl());
-        auto tmp = std::make_unique<StackAxiom>(obj.op, std::move(value), plankton::Copy(*obj.rhs));
-        result = encoding.Encode(*tmp);
-    }
-
-    void Visit(const SymbolicHeapFlow& obj) override {
-        auto& mem = memMap.Get(obj.symbol->Decl());
-        auto tmp = std::make_unique<InflowEmptinessAxiom>(mem.flow->Decl(), obj.isEmpty);
-        result = encoding.Encode(*tmp);
-    }
-};
-
 EExpr EncodeHalo(Encoding& encoding, const SymbolicHeapExpression& halo, MemoryMap& memMap) {
-    InterferenceHeapTranslator translator(encoding, memMap);
-    halo.Accept(translator);
-    if (translator.result.has_value()) return translator.result.value();
+    auto symbolic = plankton::TryMakeSymbolic(halo, [&memMap](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
+        return plankton::Copy(memMap.Get(adr));
+    });
+    if (symbolic) return encoding.Encode(*symbolic);
     throw std::logic_error("Internal error: failed to encode effect halo.");
 }
 
