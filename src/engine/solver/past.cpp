@@ -9,8 +9,6 @@
 
 using namespace plankton;
 
-constexpr const bool INTERPOLATE_POINTERS_ONLY = true;
-
 
 inline Encoding MakeEncoding(const Annotation& annotation, const SolverConfig& config) {
     Encoding encoding(*annotation.now, config);
@@ -72,30 +70,7 @@ inline std::unique_ptr<StackAxiom> MakeEq(const SymbolDeclaration& decl, const S
 
 //inline std::optional<EExpr>
 inline std::unique_ptr<SeparatingConjunction>
-MakeSubsumptionCheck(Encoding& encoding, const Formula& formula, const MemoryAxiom& weaker, const MemoryAxiom& stronger) {
-    //// TODO: why does it not work as intended??
-    //if (&stronger == &weaker) return std::nullopt;
-    //if (weaker.node->Decl() != stronger.node->Decl()) return std::nullopt;
-    //auto renaming = plankton::MakeMemoryRenaming(stronger, weaker);
-    //auto renamed = plankton::Copy(formula);
-    //plankton::RenameSymbols(*renamed, renaming);
-    ////DEBUG("  past subsumption check" << std::endl << "     for " << stronger << std::endl << "      => " << weaker << std::endl << "     chk: " << *renamed << std::endl)
-    //return encoding.Encode(*renamed);
-
-    //if (&stronger == &weaker) return std::nullopt;
-    //if (weaker.node->Decl() != stronger.node->Decl()) return std::nullopt;
-    //auto strongerInfo = ExtractKnowledge(stronger, formula);
-    //auto check = ExtractKnowledge(weaker, formula);
-    ////auto renaming = plankton::MakeMemoryRenaming(stronger, weaker);
-    ////plankton::RenameSymbols(*strongerInfo, renaming);
-    //DEBUG("#### past subsumption check: " << stronger << "  ==>  " << weaker << std::endl << "        " << *strongerInfo << std::endl << "     => " << std::endl << "        " << *check << std::endl)
-    //auto context = encoding.EncodeMemoryEquality(stronger, weaker);
-    //return (encoding.Encode(*strongerInfo) && context) >> encoding.Encode(*check);
-
-    //auto check = ExtractKnowledge(weaker, formula);
-    //auto renaming = plankton::MakeMemoryRenaming(weaker, stronger);
-    //plankton::RenameSymbols(*check, renaming);
-
+MakeSubsumptionCheck(Encoding& /*encoding*/, const Formula& formula, const MemoryAxiom& weaker, const MemoryAxiom& stronger) {
     if (&stronger == &weaker) return nullptr;
     if (weaker.node->Decl() != stronger.node->Decl()) return nullptr;
     auto check = std::make_unique<SeparatingConjunction>();
@@ -392,7 +367,6 @@ struct Interpolator {
             if (pair.second->GetSort() != Sort::PTR)
                 pastKnowledge->Conjoin(MakeStackDuplicable(ExtractKnowledge(pair.second->Decl(), *annotation.now)));
         plankton::Simplify(*pastKnowledge);
-        // auto pastKnowledge = MakeStackDuplicable(ExtractKnowledge(past, *annotation.now));
         if (pastKnowledge->conjuncts.empty()) return; //{ DEBUG("  -- nothing to be done" << std::endl) return; }
         //DEBUG("  -- working relative to: " << *pastKnowledge << std::endl)
 
@@ -489,17 +463,12 @@ struct Interpolator {
         auto newNowKnowledge = std::make_unique<SeparatingConjunction>();
         for (const auto& past : annotation.past) {
             if (!plankton::Membership(referenced, &past->formula->node->Decl())) continue;
-            // std::set<const SymbolDeclaration*> interpolated;
             for (const auto* nowMem : nowMemories) {
                 if (nowMem->node->Decl() != past->formula->node->Decl()) continue;
                 for (const auto& [field, value] : nowMem->fieldToValue) {
-                    // if (INTERPOLATE_POINTERS_ONLY && value->GetSort() != Sort::PTR) continue;
                     if (value->GetSort() == Sort::PTR && !plankton::Membership(referenced, &value->Decl())) continue;
-                    // if (plankton::Membership(interpolated, &value->Decl())) continue;
-                    // if (value->Decl() == past->formula->fieldToValue.at(field)->Decl()) continue;
                     InterpolateEffectPastToNow(*past->formula, field, value->Decl()); // TODO: still needed?
                     InterpolateDeepPastToNow(*past->formula, field, value->Decl(), *newNowKnowledge);
-                    // interpolated.insert(&value->Decl());
                 }
             }
         }

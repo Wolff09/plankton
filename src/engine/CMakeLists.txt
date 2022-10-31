@@ -58,6 +58,7 @@ set(SOURCES
         util/stack.cpp
         util/symbolic.cpp
 
+        effect.cpp
         linearizability.cpp
         static.cpp
 )

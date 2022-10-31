@@ -28,10 +28,9 @@ struct PostImageInfo {
 
     std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> aliasMap;
     std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> distinctMap;
-    // std::map<const SymbolDeclaration*, const SymbolDeclaration*> outsideInsideAlias;
-    // std::map<const SymbolDeclaration*, std::set<const SymbolDeclaration*>> outsideInsideDistinct;
     std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<Axiom>>> effectContext;
-    std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<BinaryExpression>>> effectHalo;
+    std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<SymbolicHeapExpression>>> effectPreHalo;
+    std::map<const SymbolDeclaration*, std::deque<std::unique_ptr<SymbolicHeapExpression>>> effectPostHalo;
 
     explicit PostImageInfo(std::unique_ptr<Annotation> pre_, const MemoryWrite& cmd, const SolverConfig& config)
             : config(config), command(cmd), footprint(plankton::MakeFlowFootprint(std::move(pre_), cmd, config)),
@@ -59,6 +58,15 @@ inline std::unique_ptr<StackAxiom> MakeBinary(const SymbolDeclaration& lhs, cons
 template<BinaryOperator Op>
 inline std::unique_ptr<StackAxiom> MakeBinary(const SymbolDeclaration& lhs, std::unique_ptr<SymbolicExpression> rhs) {
     return std::make_unique<StackAxiom>(Op, std::make_unique<SymbolicVariable>(lhs), std::move(rhs));
+}
+
+template<BinaryOperator Op>
+inline std::unique_ptr<SymbolicHeapExpression> MakeHeapFO(const SymbolDeclaration& lhsSym, const std::string& lhsField, std::unique_ptr<SymbolicExpression> rhs) {
+    return std::make_unique<SymbolicHeapEquality>(Op, lhsSym, lhsField, std::move(rhs));
+}
+
+inline std::unique_ptr<SymbolicHeapExpression> MakeHeapSO(const SymbolDeclaration& lhs, bool empty) {
+    return std::make_unique<SymbolicHeapFlow>(lhs, empty);
 }
 
 
@@ -382,46 +390,73 @@ inline std::vector<std::function<std::unique_ptr<Axiom>()>> GetContextGenerators
             switch (symbol.type.sort) {
                 case Sort::VOID: return {};
                 case Sort::BOOL: return { // true or false
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicBool>(true)); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicBool>(false)); }
-                };
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicBool>(true)); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicBool>(false)); }
+                    };
                 case Sort::DATA: return { // min, max, or between
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicMin>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::GT>(symbol, std::make_unique<SymbolicMin>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicMax>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::LT>(symbol, std::make_unique<SymbolicMax>()); }
-                };
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicMin>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::GT>(symbol, std::make_unique<SymbolicMin>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicMax>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::LT>(symbol, std::make_unique<SymbolicMax>()); }
+                    };
                 case Sort::TID: return { // NULL or not
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicSelfTid>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::NEQ>(symbol, std::make_unique<SymbolicSelfTid>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicSomeTid>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicUnlocked>()); }
-                };
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicSelfTid>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::NEQ>(symbol, std::make_unique<SymbolicSelfTid>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicSomeTid>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicUnlocked>()); }
+                    };
                 case Sort::PTR: return { // NULL or not
-                    [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicNull>()); },
-                    [&symbol]() { return MakeBinary<BinaryOperator::NEQ>(symbol, std::make_unique<SymbolicNull>()); }
-                };
+                            [&symbol]() { return MakeBinary<BinaryOperator::EQ>(symbol, std::make_unique<SymbolicNull>()); },
+                            [&symbol]() { return MakeBinary<BinaryOperator::NEQ>(symbol, std::make_unique<SymbolicNull>()); }
+                    };
             }
             throw;
         case Order::SECOND:
             return { // empty or not
-                [&symbol]() { return std::make_unique<InflowEmptinessAxiom>(symbol, true); },
-                [&symbol]() { return std::make_unique<InflowEmptinessAxiom>(symbol, false); }
+                    [&symbol]() { return std::make_unique<InflowEmptinessAxiom>(symbol, true); },
+                    [&symbol]() { return std::make_unique<InflowEmptinessAxiom>(symbol, false); }
             };
     }
     throw;
 }
 
-inline void AddEffectContextGenerators(PostImageInfo& info) {
-    // collect variables appearing in footprint
+inline std::vector<std::function<std::unique_ptr<SymbolicHeapExpression>()>> GetHaloGenerators(const SymbolDeclaration& symbol) {
+    if (symbol.type.sort != Sort::PTR || symbol.order != Order::FIRST) return {};
+    std::vector<std::function<std::unique_ptr<SymbolicHeapExpression>()>> result;
+    result.emplace_back([&symbol]() { return MakeHeapSO(symbol, true); });
+    result.emplace_back([&symbol]() { return MakeHeapSO(symbol, false); });
+    for (const auto& [field, type] : symbol.type.fields) {
+        switch (symbol.type.sort) {
+            case Sort::BOOL:
+                result.emplace_back([&symbol,field=field]() { return MakeHeapFO<BinaryOperator::EQ>(symbol, field, std::make_unique<SymbolicBool>(true)); });
+                result.emplace_back([&symbol,field=field]() { return MakeHeapFO<BinaryOperator::EQ>(symbol, field, std::make_unique<SymbolicBool>(false)); });
+                break;
+            case Sort::TID:
+                result.emplace_back([&symbol,field=field]() { return MakeHeapFO<BinaryOperator::EQ>(symbol, field, std::make_unique<SymbolicUnlocked>()); });
+                result.emplace_back([&symbol,field=field]() { return MakeHeapFO<BinaryOperator::NEQ>(symbol, field, std::make_unique<SymbolicUnlocked>()); });
+                break;
+            case Sort::VOID:
+            case Sort::DATA:
+            case Sort::PTR:
+                break;
+        }
+    }
+    return result;
+}
+
+inline std::set<const SymbolDeclaration*> GetFootprintSymbols(const FlowGraph& graph) {
     std::set<const SymbolDeclaration*> symbols;
-    for (const auto& node : info.footprint.nodes) {
+    for (const auto& node : graph.nodes) {
         // auto dummy = node.ToLogic(EMode::PRE); // TODO: avoid construction
         // plankton::InsertInto(plankton::Collect<SymbolDeclaration>(*dummy), symbols);
         plankton::InsertInto(plankton::Collect<SymbolDeclaration>(*node.ToLogic(EMode::PRE)), symbols);
         plankton::InsertInto(plankton::Collect<SymbolDeclaration>(*node.ToLogic(EMode::POST)), symbols);
     }
+    return symbols;
+}
 
+inline void AddEffectContextGenerators(PostImageInfo& info) {
+    auto symbols = GetFootprintSymbols(info.footprint);
     for (const auto* decl : symbols) {
         for (auto&& generator : GetContextGenerators(*decl)) {
             auto candidate = info.encoding.Encode(*generator());
@@ -432,20 +467,88 @@ inline void AddEffectContextGenerators(PostImageInfo& info) {
     }
 }
 
-inline std::unique_ptr<Formula> GetNodeUpdateContext(PostImageInfo& info, const MemoryAxiom& pre, const MemoryAxiom& post) {
-    auto result = std::make_unique<SeparatingConjunction>();
-    auto handle = [&result,&info](const SymbolDeclaration& decl) {
-        for (const auto& elem : info.effectContext[&decl]) result->Conjoin(plankton::Copy(*elem));
+struct ExtractionHeapTranslator : public EffectVisitor {
+    PostImageInfo& info;
+    EMode mode;
+    explicit ExtractionHeapTranslator(PostImageInfo& info, EMode mode) : info(info), mode(mode) {}
+    std::unique_ptr<Formula> result;
+
+    struct MemContainer {
+        std::unique_ptr<MemoryAxiom> storage;
+        const MemoryAxiom* memory;
+        explicit MemContainer(std::unique_ptr<MemoryAxiom> mem) : storage(std::move(mem)), memory(storage.get()) {}
+        explicit MemContainer(const MemoryAxiom* mem) : memory(mem) {}
     };
+    std::optional<MemContainer> GetMemory(const SymbolDeclaration& address) {
+        auto* node = info.footprint.GetNodeOrNull(address);
+        if (node) return MemContainer(node->ToLogic(mode));
+        auto* resource = plankton::TryGetResource(address, *info.pre.now);
+        if (resource) return MemContainer(resource);
+        return std::nullopt;
+    }
+    void Visit(const SymbolicHeapEquality& obj) override {
+        auto mem = GetMemory(obj.lhsSymbol->Decl());
+        if (!mem) return;
+        auto& value = mem->memory->fieldToValue.at(obj.lhsFieldName);
+        result = std::make_unique<StackAxiom>(obj.op, plankton::Copy(*value), plankton::Copy(*obj.rhs));
+    }
+    void Visit(const SymbolicHeapFlow& obj) override {
+        auto mem = GetMemory(obj.symbol->Decl());
+        if (!mem) return;
+        result = std::make_unique<InflowEmptinessAxiom>(mem->memory->flow->Decl(), obj.isEmpty);
+    }
+};
+
+inline void AddEffectHaloGenerators(PostImageInfo& info) {
+    auto symbols = GetFootprintSymbols(info.footprint);
+    for (auto mode : { EMode::PRE, EMode::POST }) {
+        for (const auto *decl: symbols) {
+            for (auto&& generator: GetHaloGenerators(*decl)) {
+                auto candidate = generator();
+                ExtractionHeapTranslator translator(info, mode);
+                candidate->Accept(translator);
+                if (!translator.result) continue;
+                auto candidateEncoded = info.encoding.Encode(*translator.result);
+                info.encoding.AddCheck(candidateEncoded, [decl, generator, &info, mode](bool holds) {
+                    if (!holds) return;
+                    switch (mode) {
+                        case EMode::PRE: info.effectPreHalo[decl].push_back(generator()); break;
+                        case EMode::POST: info.effectPostHalo[decl].push_back(generator()); break;
+                    }
+                });
+            }
+        }
+    }
+}
+
+inline std::set<const SymbolDeclaration*> GetPrePostSymbols(const MemoryAxiom& pre, const MemoryAxiom& post) {
     std::set<const SymbolDeclaration*> symbols;
     for (const auto* node : {&pre, &post}) {
         symbols.insert(&node->flow->Decl());
         for (const auto& pair: node->fieldToValue) symbols.insert(&pair.second->Decl());
     }
-    for (const auto* symbol : symbols) {
-        handle(*symbol);
-    }
+    return symbols;
+}
+
+inline std::unique_ptr<Formula> GetNodeUpdateContext(PostImageInfo& info, const MemoryAxiom& pre, const MemoryAxiom& post) {
+    auto result = std::make_unique<SeparatingConjunction>();
+    auto handle = [&result,&info](const SymbolDeclaration& decl) {
+        for (const auto& elem : info.effectContext[&decl]) result->Conjoin(plankton::Copy(*elem));
+    };
+    auto symbols = GetPrePostSymbols(pre, post);
+    for (const auto* symbol : symbols) handle(*symbol);
     plankton::Simplify(*result);
+    return result;
+}
+
+inline std::deque <std::unique_ptr<SymbolicHeapExpression>> GetNodeUpdateHalo(PostImageInfo& info, const MemoryAxiom& pre, const MemoryAxiom& post, EMode mode) {
+    std::deque <std::unique_ptr<SymbolicHeapExpression>> result;
+    auto& src = mode == EMode::PRE ? info.effectPreHalo : info.effectPostHalo;
+    auto handle = [&result,&src](const SymbolDeclaration& decl) {
+        for (const auto& elem : src[&decl]) result.push_back(plankton::Copy(*elem));
+    };
+    auto symbols = GetPrePostSymbols(pre, post);
+    for (const auto* symbol : symbols) handle(*symbol);
     return result;
 }
 
@@ -465,7 +568,9 @@ inline std::unique_ptr<HeapEffect> ExtractEffect(PostImageInfo& info, const Flow
     auto pre = ToSharedMemoryCore(node, EMode::PRE);
     auto post = ToSharedMemoryCore(node, EMode::POST);
     auto context = GetNodeUpdateContext(info, *pre, *post);
-    return std::make_unique<HeapEffect>(std::move(pre), std::move(post), std::move(context));
+    auto preHalo = GetNodeUpdateHalo(info, *pre, *post, EMode::PRE);
+    auto postHalo = GetNodeUpdateHalo(info, *pre, *post, EMode::PRE);
+    return std::make_unique<HeapEffect>(std::move(pre), std::move(post), std::move(context), std::move(preHalo), std::move(postHalo));
 }
 
 inline std::deque<std::unique_ptr<HeapEffect>> ExtractEffects(PostImageInfo& info) {
@@ -648,7 +753,7 @@ PostImage Solver::Post(std::unique_ptr<Annotation> pre, const MemoryWrite& cmd, 
         AddSpecificationChecks(info);
         AddAffectedOutsideChecks(info);
         AddEffectContextGenerators(info);
-        AddEffectContextGenerators(info);
+        AddEffectHaloGenerators(info);
         AddEffectPrecisionCheck(info);
         info.encoding.Check();
 

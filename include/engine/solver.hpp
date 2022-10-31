@@ -9,20 +9,9 @@
 #include "engine/config.hpp"
 #include "engine/static.hpp"
 #include "engine/setup.hpp"
+#include "engine/effect.hpp"
 
 namespace plankton {
-
-    struct HeapEffect final {
-        std::unique_ptr<SharedMemoryCore> pre; // memory before update
-        std::unique_ptr<SharedMemoryCore> post; // memory after update
-        std::unique_ptr<Formula> context; // stack context of pre/post (not a frame!)
-        std::vector<std::unique_ptr<BinaryExpression>> halo; // stack context beyond pre/post
-    
-        explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
-                            std::unique_ptr<Formula> context);
-        explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
-                            std::unique_ptr<Formula> context, std::vector<std::unique_ptr<BinaryExpression>> halo);
-    };
 
     struct PostImage final {
         std::deque<std::unique_ptr<Annotation>> annotations;
@@ -78,8 +67,7 @@ namespace plankton {
             void ReducePast(Annotation& annotation) const;
             void ReduceFuture(Annotation& annotation) const;
     };
-    
-    
+
     std::ostream& operator<<(std::ostream& out, const HeapEffect& object);
 
 } // namespace plankton

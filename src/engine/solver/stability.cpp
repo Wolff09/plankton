@@ -36,12 +36,35 @@ struct InterferenceInfo {
         // DEBUG(" -- pre: " << *annotation << std::endl;)
     }
 
+    inline EExpr EncodePreHalo(Encoding& encoding, const HeapEffect& effect) const {
+        auto result = plankton::MakeVector<EExpr>(effect.preHalo.size());
+        for (const auto& expr : effect.preHalo) {
+            if (auto eqExpr = dynamic_cast<const SymbolicHeapEquality*>(expr.get())) {
+                auto mem = plankton::TryGetResource(eqExpr->lhsSymbol->Decl(), *annotation->now);
+                if (!mem) continue;
+                StackAxiom tmp(eqExpr->op, std::make_unique<SymbolicVariable>(mem->fieldToValue.at(eqExpr->lhsFieldName)->Decl()),
+                               plankton::Copy(*eqExpr->rhs));
+                result.push_back(encoding.Encode(tmp));
+            } else if (auto flExpr = dynamic_cast<const SymbolicHeapFlow*>(expr.get())) {
+                auto mem = plankton::TryGetResource(flExpr->symbol->Decl(), *annotation->now);
+                if (!mem) continue;
+                InflowEmptinessAxiom tmp(flExpr->symbol->Decl(), flExpr->isEmpty);
+                result.push_back(encoding.Encode(tmp));
+            } else {
+                throw std::logic_error("Internal error: failed to process interference.");
+            }
+        }
+        return encoding.MakeAnd(result);
+    }
+
     inline void Handle(SharedMemoryCore& memory, const HeapEffect& effect, Encoding& encoding) {
         // TODO: avoid encoding the same annotation/effect multiple times
         if (memory.node->GetType() != effect.pre->node->GetType()) return;
         if (&effect.pre->node->Decl() != &effect.post->node->Decl()) throw std::logic_error("Unsupported effect"); // TODO: better error handling
-    
-        auto effectMatch = encoding.EncodeMemoryEquality(memory, *effect.pre) && encoding.Encode(*effect.context);
+
+        auto effectMatch = encoding.EncodeMemoryEquality(memory, *effect.pre)
+                           && encoding.Encode(*effect.context)
+                           && EncodePreHalo(encoding, effect);
         auto isInterferenceFree = effectMatch >> encoding.Bool(false);
         encoding.AddCheck(isInterferenceFree, [this, &memory, &effect](bool isStable) {
             if (isStable) return;
@@ -60,18 +83,6 @@ struct InterferenceInfo {
             }
         }
         encoding.Check();
-    }
-
-    inline bool IsStackFormula(const Formula& formula) {
-        struct : public DefaultLogicVisitor {
-            bool result = false;
-            void Visit(const StackAxiom& /*object*/) override { result = true; }
-            void Visit(const InflowEmptinessAxiom& /*object*/) override { result = true; }
-            void Visit(const InflowContainsValueAxiom& /*object*/) override { result = true; }
-            void Visit(const InflowContainsRangeAxiom& /*object*/) override { result = true; }
-        } visitor;
-        formula.Accept(visitor);
-        return visitor.result;
     }
 
     inline void Apply() {

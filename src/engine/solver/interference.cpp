@@ -13,6 +13,108 @@ using EffectPairDeque = std::deque<std::pair<const HeapEffect*, const HeapEffect
 
 
 //
+// Halo Helplers
+//
+
+void RenameHeapExpression(SymbolicHeapExpression& expr, const SymbolRenaming& renaming) {
+    if (auto eq = dynamic_cast<SymbolicHeapEquality*>(&expr)) {
+        plankton::RenameSymbols(*eq->lhsSymbol, renaming);
+        plankton::RenameSymbols(*eq->rhs, renaming);
+    } else if (auto fl = dynamic_cast<SymbolicHeapFlow*>(&expr)) {
+        plankton::RenameSymbols(*fl->symbol, renaming);
+    } else {
+        throw std::logic_error("Internal error: failed to rename effect.");
+    }
+}
+
+bool IsHeapEqual(const SymbolicHeapExpression& halo, const SymbolicHeapExpression& other) {
+    if (auto haloEq = dynamic_cast<const SymbolicHeapEquality *>(&halo)) {
+        if (auto otherEq = dynamic_cast<const SymbolicHeapEquality *>(&other)) {
+            return plankton::SyntacticalEqual(*haloEq->lhsSymbol, *otherEq->lhsSymbol)
+                   && haloEq->lhsFieldName == otherEq->lhsFieldName
+                   && plankton::SyntacticalEqual(*haloEq->rhs, *otherEq->rhs);
+        } else return false;
+    } else if (auto haloFl = dynamic_cast<const SymbolicHeapFlow *>(&halo)) {
+        if (auto otherFl = dynamic_cast<const SymbolicHeapFlow *>(&other)) {
+            return plankton::SyntacticalEqual(*haloFl->symbol, *otherFl->symbol)
+                   && haloFl->isEmpty == otherFl->isEmpty;
+        } else return false;
+    } else {
+        throw std::logic_error("Internal error: failed to compare effects.");
+    }
+}
+
+bool IsHeapEqual(const std::vector <std::unique_ptr<SymbolicHeapExpression>>& halo, const std::vector <std::unique_ptr<SymbolicHeapExpression>>& other) {
+    if (halo.size() != other.size()) return false;
+    for (std::size_t index = 0; index < halo.size(); ++index) {
+        if (!IsHeapEqual(*halo.at(index), *other.at(index))) return false;
+    }
+    return true;
+}
+
+struct MemoryMap {
+    SymbolFactory& factory;
+    const Type& flowType;
+    std::map<const SymbolDeclaration*, std::unique_ptr<SharedMemoryCore>> memMap;
+    explicit MemoryMap(SymbolFactory& factory, const Type& flowType) : factory(factory), flowType(flowType) {}
+    const SharedMemoryCore& Get(const SymbolDeclaration& decl) {
+        auto find = memMap.find(&decl);
+        if (find != memMap.end()) return *find->second;
+        auto insertion = memMap.emplace(&decl, plankton::MakeSharedMemory(decl, flowType, factory));
+        return *insertion.first->second;
+    }
+};
+
+struct InterferenceHeapTranslator : public EffectVisitor {
+    Encoding& encoding;
+    MemoryMap& memMap;
+    std::optional<EExpr> result = std::nullopt;
+    explicit InterferenceHeapTranslator(Encoding& encoding, MemoryMap& memMap) : encoding(encoding), memMap(memMap) {}
+
+    void Visit(const SymbolicHeapEquality& obj) override {
+        auto& mem = memMap.Get(obj.lhsSymbol->Decl());
+        auto value = std::make_unique<SymbolicVariable>(mem.fieldToValue.at(obj.lhsFieldName)->Decl());
+        auto tmp = std::make_unique<StackAxiom>(obj.op, std::move(value), plankton::Copy(*obj.rhs));
+        result = encoding.Encode(*tmp);
+    }
+
+    void Visit(const SymbolicHeapFlow& obj) override {
+        auto& mem = memMap.Get(obj.symbol->Decl());
+        auto tmp = std::make_unique<InflowEmptinessAxiom>(mem.flow->Decl(), obj.isEmpty);
+        result = encoding.Encode(*tmp);
+    }
+};
+
+EExpr EncodeHalo(Encoding& encoding, const SymbolicHeapExpression& halo, MemoryMap& memMap) {
+    InterferenceHeapTranslator translator(encoding, memMap);
+    halo.Accept(translator);
+    if (translator.result.has_value()) return translator.result.value();
+    throw std::logic_error("Internal error: failed to encode effect halo.");
+}
+
+EExpr EncodeHalo(Encoding& encoding, const std::vector<std::unique_ptr<SymbolicHeapExpression>>& halo, MemoryMap& memMap) {
+    auto result = plankton::MakeVector<EExpr>(halo.size());
+    for (const auto& elem : halo) result.push_back(EncodeHalo(encoding, *elem, memMap));
+    return encoding.MakeAnd(result);
+}
+
+EExpr EncodeMemoryEqualities(const MemoryMap& map, Encoding& encoding) {
+    std::vector<EExpr> result;
+    for (auto it = map.memMap.begin(); it != map.memMap.end(); ++it) {
+        for (auto ot = std::next(it); ot != map.memMap.end(); ++ot) {
+            auto& itAdr = it->second->node->Decl();
+            auto& otAdr = ot->second->node->Decl();
+            if (itAdr == otAdr) continue;
+            auto sameAdr = encoding.Encode(itAdr) == encoding.Encode(otAdr);
+            auto sameMem = encoding.EncodeMemoryEquality(*it->second, *ot->second);
+            result.push_back(sameAdr >> sameMem);
+        }
+    }
+    return encoding.MakeAnd(result);
+}
+
+
+//
 // Implication among effects
 //
 
@@ -37,25 +139,41 @@ inline bool UpdateSubset(const HeapEffect& premise, const HeapEffect& conclusion
     });
 }
 
-inline void AddEffectImplicationCheck(Encoding& encoding, const HeapEffect& premise, const HeapEffect& conclusion,
-                                      std::function<void()>&& eureka) {
+inline void AddEffectImplicationCheck(Encoding& encoding, const HeapEffect& premise, const HeapEffect& conclusion, std::function<void()>&& eureka) {
     // give up if context contains resources
     if (!CheckContext(*premise.context) || !CheckContext(*conclusion.context)) return;
     
     // ensure that the premise updates at least the fields updated by the conclusion
     if (!UpdateSubset(premise, conclusion)) return;
-    
+
+    // // don't deal with halo
+    // if (!IsHeapEqual(premise.preHalo, conclusion.preHalo)) return;
+    // if (!IsHeapEqual(premise.postHalo, conclusion.postHalo)) return;
+    SymbolFactory factory;
+    AvoidEffectSymbols(factory, premise);
+    AvoidEffectSymbols(factory, conclusion);
+    auto& flowType = premise.pre->flow->GetType();
+    MemoryMap preMap(factory, flowType), postMap(factory, flowType);
+
     // encode
     auto premisePre = encoding.Encode(*premise.pre) && encoding.Encode(*premise.context);
     auto premisePost = encoding.Encode(*premise.post) && encoding.Encode(*premise.context);
     auto conclusionPre = encoding.Encode(*conclusion.pre) && encoding.Encode(*conclusion.context);
     auto conclusionPost = encoding.Encode(*conclusion.post) && encoding.Encode(*conclusion.context);
+    auto premisePreHalo = EncodeHalo(encoding, premise.preHalo, preMap);
+    auto premisePostHalo = EncodeHalo(encoding, premise.postHalo, postMap);
+    auto conclusionPreHalo = EncodeHalo(encoding, conclusion.preHalo, preMap);
+    auto conclusionPostHalo = EncodeHalo(encoding, conclusion.postHalo, postMap);
     auto samePre = encoding.EncodeMemoryEquality(*premise.pre, *conclusion.pre);
     auto samePost = encoding.EncodeMemoryEquality(*premise.post, *conclusion.post);
+    auto sameHalo = EncodeMemoryEqualities(preMap, encoding) && EncodeMemoryEqualities(postMap, encoding);
 
     // check
     auto isImplied = ((samePre && samePost && conclusionPre) >> premisePre)
-                         && ((samePre && samePost && conclusionPost) >> premisePost); // TODO: correct?
+                         && ((samePre && samePost && conclusionPost) >> premisePost)
+                         && ((samePre && samePost && sameHalo && conclusionPreHalo) >> premisePreHalo)
+                         && ((samePre && samePost && sameHalo && conclusionPostHalo) >> premisePostHalo)
+                         ; // TODO: correct?
     encoding.AddCheck(isImplied, [eureka=std::move(eureka)](bool holds) { if (holds) eureka(); });
 }
 
@@ -81,6 +199,8 @@ inline void RenameEffect(HeapEffect& effect, SymbolFactory& factory) {
     plankton::RenameSymbols(*effect.pre, renaming);
     plankton::RenameSymbols(*effect.post, renaming);
     plankton::RenameSymbols(*effect.context, renaming);
+    for (auto& elem : effect.preHalo) RenameHeapExpression(*elem, renaming);
+    for (auto& elem : effect.postHalo) RenameHeapExpression(*elem, renaming);
 }
 
 inline bool IsEffectEmpty(const HeapEffect& effect) {
@@ -95,7 +215,9 @@ inline bool IsEffectEmpty(const HeapEffect& effect) {
 inline bool AreEffectsEqual(const HeapEffect& effect, const HeapEffect& other) {
     return plankton::SyntacticalEqual(*effect.pre, *other.pre)
            && plankton::SyntacticalEqual(*effect.post, *other.post)
-           && plankton::SyntacticalEqual(*effect.context, *other.context);
+           && plankton::SyntacticalEqual(*effect.context, *other.context)
+           && IsHeapEqual(effect.preHalo, other.preHalo)
+           && IsHeapEqual(effect.postHalo, other.postHalo);
 }
 
 inline void QuickFilter(std::deque<std::unique_ptr<HeapEffect>>& effects) {
@@ -126,17 +248,29 @@ inline void RenameEffects(std::deque<std::unique_ptr<HeapEffect>>& effects, cons
     for (auto& effect : effects) RenameEffect(*effect, factory);
 }
 
+void ReplaceInterfererTid(StackAxiom& axiom) {
+    if (dynamic_cast<const SymbolicSelfTid*>(axiom.lhs.get())) {
+        axiom.lhs = std::make_unique<SymbolicSomeTid>();
+    }
+    if (dynamic_cast<const SymbolicSelfTid*>(axiom.rhs.get())) {
+        axiom.rhs = std::make_unique<SymbolicSomeTid>();
+    }
+}
+
+void ReplaceInterfererTid(SymbolicHeapExpression& expr) {
+    if (auto eqExpr = dynamic_cast<SymbolicHeapEquality*>(&expr)) {
+        if (dynamic_cast<const SymbolicSelfTid*>(eqExpr->rhs.get())) {
+            eqExpr->rhs = std::make_unique<SymbolicSomeTid>();
+        }
+    }
+}
+
 void ReplaceInterfererTid(std::deque<std::unique_ptr<HeapEffect>>& interference) {
     for (const auto& effect : interference) {
         auto axioms = plankton::CollectMutable<StackAxiom>(*effect->context);
-        for (const auto& axiom: axioms) {
-            if (dynamic_cast<const SymbolicSelfTid*>(axiom->lhs.get())) {
-                axiom->lhs = std::make_unique<SymbolicSomeTid>();
-            }
-            if (dynamic_cast<const SymbolicSelfTid*>(axiom->rhs.get())) {
-                axiom->rhs = std::make_unique<SymbolicSomeTid>();
-            }
-        }
+        for (const auto& axiom: axioms) ReplaceInterfererTid(*axiom);
+        for (auto& elem : effect->preHalo) ReplaceInterfererTid(*elem);
+        for (auto& elem : effect->postHalo) ReplaceInterfererTid(*elem);
     }
 }
 
