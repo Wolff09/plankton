@@ -225,6 +225,95 @@ inline void CheckInvariant(PostImageInfo& info) {
     }
 }
 
+inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
+    // pairs of footprint nodes
+    auto asShared = [](auto&& memory) {
+        if (auto* shared = dynamic_cast<SharedMemoryCore*>(memory.get())) {
+            (void) memory.release();
+            return std::unique_ptr<SharedMemoryCore>(shared);
+        }
+        throw std::logic_error("Internal error: failed to check pairwise shared node invariant.");
+    };
+    for (const auto& node : info.footprint.nodes) {
+        if (node.postLocal) continue;
+        for (const auto& other : info.footprint.nodes) {
+            if (other.postLocal) continue;
+            if (node.address == other.address) continue;
+            auto nodeMem = asShared(node.ToLogic(EMode::POST));
+            auto otherMem = asShared(other.ToLogic(EMode::POST));
+            auto invariant = info.config.GetSharedNodePairInvariant(*nodeMem, *otherMem);
+            auto pairInvariant = info.encoding.Encode(*invariant);
+            info.encoding.AddCheck(pairInvariant, [&node,&other](bool holds){
+                if (holds) return;
+                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + other.address.name + "'."); // TODO: better error handling
+            });
+        }
+    }
+
+    // pairs of footprint and an arbitrary placeholder node outside the footprint
+    SymbolFactory factory(info.pre);
+    for (const auto& node : info.footprint.nodes) {
+        factory.Avoid(*node.ToLogic(EMode::PRE));
+        factory.Avoid(*node.ToLogic(EMode::POST));
+    }
+    auto mkDistinct = [&info](const auto& adr) {
+        auto adrEnc = info.encoding.Encode(adr);
+        auto vec = plankton::MakeVector<EExpr>(info.footprint.nodes.size());
+        for (const auto& node : info.footprint.nodes) vec.push_back(adrEnc != info.encoding.Encode(node.address));
+        return info.encoding.MakeAnd(vec);
+    };
+    auto mkNoReach = [&info](const auto& mem, const auto& adr) {
+        auto adrEnc = info.encoding.Encode(adr);
+        auto vec = plankton::MakeVector<EExpr>(mem.fieldToValue.size());
+        for (const auto& [name, value] : mem.fieldToValue) {
+            if (value->GetSort() != Sort::PTR) continue;
+            if (value->GetOrder() != Order::FIRST) continue;
+            vec.push_back(adrEnc != info.encoding.Encode(*value));
+        }
+        return info.encoding.MakeAnd(vec);
+    };
+    auto mkAlias = [&info](const SharedMemoryCore& mem) -> EExpr {
+        auto shared = plankton::Collect<SharedMemoryCore>(*info.pre.now);
+        auto result = plankton::MakeVector<EExpr>(shared.size());
+        for (const auto* other : shared) {
+            auto sameAdr = info.encoding.Encode(*other->node) == info.encoding.Encode(*mem.node);
+            auto sameMem = info.encoding.EncodeMemoryEquality(mem, *other);
+            result.push_back(sameAdr >> sameMem);
+        }
+        return info.encoding.MakeAnd(result);
+    };
+    auto footprintAdr = plankton::MakeVector<EExpr>(info.footprint.nodes.size());
+    for (const auto& node : info.footprint.nodes) footprintAdr.push_back(info.encoding.Encode(node.address));
+    for (const auto& type : program.types) {
+        auto placeholder = plankton::MakeSharedMemory(factory.GetFreshFO(*type), info.config.GetFlowValueType(), factory);
+        auto placeholderInv = info.encoding.Encode(*info.config.GetSharedNodeInvariant(*placeholder));
+        auto distinct = mkDistinct(*placeholder->node);
+        auto alias = mkAlias(*placeholder);
+        for (const auto& node : info.footprint.nodes) {
+            if (node.postLocal) continue;
+            if (node.address == placeholder->node->Decl())
+                throw std::logic_error("Internal error: failed to check pairwise shared node invariant.");
+            auto tt = info.encoding.Bool(true);
+            auto preMem = node.preLocal ? nullptr : asShared(node.ToLogic(EMode::PRE));
+            auto postMem = asShared(node.ToLogic(EMode::POST));
+            auto preInv = preMem ? info.encoding.Encode(*info.config.GetSharedNodePairInvariant(*preMem, *placeholder)) : mkNoReach(*placeholder, node.address);
+            auto preInvRev = preMem ? info.encoding.Encode(*info.config.GetSharedNodePairInvariant(*placeholder, *preMem)) : mkNoReach(*placeholder, node.address);
+            auto postInv = info.encoding.Encode(*info.config.GetSharedNodePairInvariant(*postMem, *placeholder));
+            auto postInvRev = info.encoding.Encode(*info.config.GetSharedNodePairInvariant(*placeholder, *postMem));
+            auto check = (distinct && alias && placeholderInv && preInv) >> postInv;
+            auto checkRev = (distinct && alias && placeholderInv && preInvRev) >> postInvRev;
+            info.encoding.AddCheck(check, [&node,name=placeholder->node->Decl().name](bool holds){
+                if (holds) return;
+                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + name + "'."); // TODO: better error handling
+            });
+            info.encoding.AddCheck(checkRev, [&node,name=placeholder->node->Decl().name](bool holds){
+                if (holds) return;
+                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + name + "', '" + node.address.name + "'."); // TODO: better error handling
+            });
+        }
+    }
+}
+
 inline void AddSpecificationChecks(PostImageInfo& info) {
     // check purity
     plankton::AddPureCheck(info.footprint, info.encoding, [&info](bool isPure) {
@@ -727,6 +816,7 @@ PostImage Solver::Post(std::unique_ptr<Annotation> pre, const MemoryWrite& cmd, 
         CheckFlowCoverage(info);
         CheckFlowUniqueness(info);
         CheckInvariant(info);
+        CheckGlobalInvariant(info, program);
         AddSpecificationChecks(info);
         AddAffectedOutsideChecks(info);
         AddEffectContextGenerators(info);

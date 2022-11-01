@@ -59,6 +59,7 @@ namespace plankton {
         [[nodiscard]] std::unique_ptr<Annotation> ReduceFuture(std::unique_ptr<Annotation> annotation) const;
 
         private:
+            const Program& program;
             const SolverConfig& config;
             DataFlowAnalysis dataFlow;
             std::deque<std::unique_ptr<HeapEffect>> interference;

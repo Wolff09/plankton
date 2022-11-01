@@ -12,6 +12,7 @@ program : option* (
           | ctns+=containsPredicate
           | outf+=outflowPredicate
           | ninv+=nodeInvariant
+          | pinv+=pairwiseInvariant
           | acyc+=acyclicityInvariant
         )* EOF ;
 
@@ -174,6 +175,11 @@ nodeInvariant : 'def' Invariant '[' (isShared=Shared | isLocal=Local) ']'
                 '{' invariant '}'
               ;
 
+pairwiseInvariant : 'def' Invariant '[' NonLocal ']'
+                    '(' lhsType=type lhsName=Identifier ',' rhsType=type rhsName=Identifier ')'
+                    '{' invariant '}'
+                  ;
+
 acyclicityCondition : 'physical'   #acycPhysical
                     | 'effective'  #acycEffective
                     | 'none'       #acycNone
@@ -248,6 +254,7 @@ Invariant : '@invariant';
 Acyclicity : '@acyclicity';
 Shared : 'shared';
 Local : 'local';
+NonLocal : 'pairwise';
 In : 'in';
 FlowField : '_flow';
 

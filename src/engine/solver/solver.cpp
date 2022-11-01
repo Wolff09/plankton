@@ -77,7 +77,7 @@ struct AssumptionChecker : DefaultProgramVisitor {
     }
 };
 
-Solver::Solver(const Program& program, const SolverConfig& config) : config(config), dataFlow(program) {
+Solver::Solver(const Program& program, const SolverConfig& config) : program(program), config(config), dataFlow(program) {
     // sanity check
     AssumptionChecker checker;
     program.Accept(checker);

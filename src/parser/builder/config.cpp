@@ -50,6 +50,27 @@ inline const Type& GetValueType(const AstBuilder& builder, PlanktonParser::TypeC
 
 
 //
+// Checks
+//
+
+void EnsureNoLocks(const LogicObject& imp) {
+    auto isLockSort = [](auto& elem){ return elem.type.sort == Sort::TID; };
+    bool noLock = plankton::Collect<SymbolicSelfTid>(imp).empty()
+                  && plankton::Collect<SymbolicSomeTid>(imp).empty()
+                  && plankton::Collect<SymbolicUnlocked>(imp).empty()
+                  && plankton::Collect<SymbolDeclaration>(imp, isLockSort).empty();
+    if (noLock) return;
+    throw std::logic_error("Parse error: locks are not supported here.");
+}
+
+void EnsureNoFlows(const LogicObject& imp, const SymbolDeclaration& flow) {
+    auto symbols = plankton::Collect<SymbolDeclaration>(imp);
+    auto find = symbols.find(&flow);
+    if (find == symbols.end()) return;
+    throw std::logic_error("Parse error: flows are not supported here.");
+}
+
+//
 // Acyclicity
 //
 
@@ -120,8 +141,7 @@ struct FlowStore {
 };
 
 template<bool HasMem, bool HasVal>
-std::unique_ptr<ImplicationSet> Instantiate(const FlowStore& store,
-                                            const MemoryAxiom* memory, const SymbolDeclaration* value) {
+std::unique_ptr<ImplicationSet> Instantiate(const FlowStore& store, const MemoryAxiom* memory, const SymbolDeclaration* value) {
     // get blueprint
     assert(store.invariant);
     auto blueprint = plankton::Copy(*store.invariant);
@@ -164,6 +184,51 @@ std::unique_ptr<ImplicationSet> Instantiate(const FlowStore& store,
     return blueprint;
 }
 
+struct PairwiseStore {
+    const SymbolDeclaration& lhsNode;
+    const SymbolDeclaration& lhsFlow;
+    const SymbolDeclaration& rhsNode;
+    const SymbolDeclaration& rhsFlow;
+    FieldMap lhsFields, rhsFields;
+    std::unique_ptr<ImplicationSet> invariant = nullptr;
+
+    explicit PairwiseStore(const MemoryAxiom& lhs, const MemoryAxiom& rhs)
+            : lhsNode(lhs.node->Decl()), lhsFlow(lhs.flow->Decl()), rhsNode(rhs.node->Decl()), rhsFlow(rhs.flow->Decl()) {
+        for (const auto& [name, value] : lhs.fieldToValue) lhsFields.emplace(name, value->Decl());
+        for (const auto& [name, value] : rhs.fieldToValue) rhsFields.emplace(name, value->Decl());
+    }
+};
+
+std::unique_ptr<ImplicationSet> Instantiate(const PairwiseStore& store, const MemoryAxiom& lhs, const MemoryAxiom& rhs) {
+    // get blueprint
+    assert(store.invariant);
+    auto blueprint = plankton::Copy(*store.invariant);
+
+    // create variable map
+    std::map<const SymbolDeclaration*, const SymbolDeclaration*> replacement;
+    auto AddReplacement = [&replacement](auto& replace, auto& with) {
+        [[maybe_unused]] auto insertion = replacement.emplace(&replace, &with);
+        assert(insertion.second);
+    };
+
+    AddReplacement(store.lhsNode, lhs.node->Decl());
+    AddReplacement(store.rhsNode, rhs.node->Decl());
+    for (const auto& [name, value] : lhs.fieldToValue)
+        AddReplacement(store.lhsFields.at(name).get(), value->Decl());
+    for (const auto& [name, value] : rhs.fieldToValue)
+        AddReplacement(store.rhsFields.at(name).get(), value->Decl());
+
+    // rename blueprint
+    auto renaming = [&replacement](const SymbolDeclaration& replace) -> const SymbolDeclaration& {
+        auto find = replacement.find(&replace);
+        if (find != replacement.end()) return *find->second;
+        throw std::logic_error("Internal error: instantiation failed due to incomplete renaming.");
+    };
+    plankton::RenameSymbols(*blueprint, renaming);
+
+    return blueprint;
+}
+
 
 //
 // Parsing config components
@@ -192,6 +257,37 @@ FlowStore MakeFlowDef(AstBuilder& builder, FlowConstructionInfo info, PlanktonPa
     builder.PopScope();
     
     plankton::Simplify(*result.invariant);
+    return result;
+}
+
+PairwiseStore MakePairwiseInvariantDef(AstBuilder& builder, PlanktonParser::PairwiseInvariantContext& context) {
+    auto lhsName = context.lhsName->getText();
+    auto rhsName = context.rhsName->getText();
+
+    SymbolFactory factory;
+    auto lhs = std::make_unique<VariableDeclaration>(lhsName, GetNodeType(builder, *context.lhsType), false);
+    auto rhs = std::make_unique<VariableDeclaration>(rhsName, GetNodeType(builder, *context.rhsType), false);
+    auto lhsBind = std::make_unique<EqualsToAxiom>(*lhs, factory.GetFreshFO(lhs->type));
+    auto rhsBind = std::make_unique<EqualsToAxiom>(*rhs, factory.GetFreshFO(rhs->type));
+    auto lhsMem = plankton::MakeSharedMemory(lhsBind->Value(), Type::Data(), factory);
+    auto rhsMem = plankton::MakeSharedMemory(rhsBind->Value(), Type::Data(), factory);
+    PairwiseStore result(*lhsMem, *rhsMem);
+
+    builder.PushScope();
+    builder.AddDecl(std::move(rhs));
+    builder.AddDecl(std::move(lhs));
+
+    auto evalContext = std::make_unique<SeparatingConjunction>();
+    evalContext->Conjoin(std::move(lhsBind));
+    evalContext->Conjoin(std::move(rhsBind));
+    evalContext->Conjoin(std::move(lhsMem));
+    evalContext->Conjoin(std::move(rhsMem));
+
+    auto invariant = builder.MakeInvariant(*context.invariant(), *evalContext);
+    plankton::Simplify(*invariant);
+    builder.PopScope();
+
+    result.invariant = std::move(invariant);
     return result;
 }
 
@@ -281,6 +377,7 @@ std::map<const VariableDeclaration*, FlowStore> ExtractVariableInvariants(const 
 struct ParsedSolverConfigImpl : public ParsedSolverConfig {
     SolverConfig::Acyclicity acyclicity = SolverConfig::PHYSICAL;
     std::map<const Type*, FlowStore> containsPred, sharedInv, localInv;
+    std::map<std::pair<const Type*, const Type*>, PairwiseStore> pairwiseInv;
     std::map<std::pair<const Type*, std::string>, FlowStore> outflowPred;
     std::map<const VariableDeclaration*, FlowStore> variableInv;
 
@@ -288,13 +385,20 @@ struct ParsedSolverConfigImpl : public ParsedSolverConfig {
         return acyclicity;
 }
     
-    template<typename T>
-    [[nodiscard]] inline const FlowStore* FindStore(const std::map<T, FlowStore>& map, const T& key) const {
+    template<typename T, typename V>
+    [[nodiscard]] inline const V* FindStore(const std::map<T, V>& map, const T& key) const {
         auto find = map.find(key);
         if (find != map.end()) return &find->second;
         return nullptr;
     }
-    
+
+    [[nodiscard]] std::unique_ptr<ImplicationSet> GetSharedNodePairInvariant(const SharedMemoryCore& memory, const SharedMemoryCore& other) const override {
+        auto key = std::make_pair(&memory.node->GetType(), &other.node->GetType());
+        auto store = FindStore(pairwiseInv, key);
+        if (!store) return std::make_unique<ImplicationSet>();
+        return Instantiate(*store, memory, other);
+    }
+
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetSharedNodeInvariant(const SharedMemoryCore& memory) const override {
         auto store = FindStore(sharedInv, &memory.node->GetType());
         if (!store) return std::make_unique<ImplicationSet>();
@@ -340,6 +444,8 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
     
     for (auto* containsContext : context.ctns) {
         auto store = MakeContains(*this, *containsContext);
+        EnsureNoLocks(*store.invariant);
+        EnsureNoFlows(*store.invariant, *store.nodeFlow);
         assert(store.node);
         auto& type = store.node->type;
         auto insertion = result->containsPred.emplace(&type, std::move(store));
@@ -349,6 +455,8 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
     
     for (auto* outflowContext : context.outf) {
         auto store = MakeOutflow(*this, *outflowContext);
+        EnsureNoLocks(*store.invariant);
+        EnsureNoFlows(*store.invariant, *store.nodeFlow);
         assert(store.node);
         auto& type = store.node->type;
         auto field = outflowContext->field->getText();
@@ -362,6 +470,7 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
         bool shared = invariantContext->isShared;
         
         auto store = MakeNodeInvariant(*this, *invariantContext);
+        EnsureNoLocks(*store.invariant);
         if (shared) result->variableInv = ExtractVariableInvariants(std::as_const(store));
     
         assert(store.node);
@@ -369,8 +478,21 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
         auto& target = shared ? result->sharedInv : result->localInv;
         auto insertion = target.emplace(&type, std::move(store));
         if (!insertion.second)
-            throw std::logic_error("Parse error: duplicate invariant definition for for type '" + type.name + "'."); // TODO: better error handling
+            throw std::logic_error("Parse error: duplicate invariant definition for type '" + type.name + "'."); // TODO: better error handling
     }
+
+    for (auto* invariantContext : context.pinv) {
+        auto store = MakePairwiseInvariantDef(*this, *invariantContext);
+        EnsureNoLocks(*store.invariant);
+        EnsureNoFlows(*store.invariant, store.lhsFlow);
+        EnsureNoFlows(*store.invariant, store.rhsFlow);
+        auto& lhsType = store.lhsNode.type;
+        auto& rhsType = store.rhsNode.type;
+        auto insertion = result->pairwiseInv.emplace(std::make_pair(&lhsType, &rhsType), std::move(store));
+        if (!insertion.second)
+            throw std::logic_error("Parse error: duplicate invariant definition for types '" + rhsType.name + "'x'" + lhsType.name + "'."); // TODO: better error handling
+    }
+
     for (const auto& type : _types) {
         if (result->sharedInv.count(type.get()) == 0)
             WARNING("no shared invariant for type " << type->name << "." << std::endl)

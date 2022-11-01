@@ -151,7 +151,6 @@ EExpr Encoding::EncodeInflowUniqueness(const FlowGraph& graph, EMode mode) {
     return MakeAnd(result);
 }
 
-#include "util/log.hpp"
 EExpr Encoding::Encode(const FlowGraph& graph) {
     //
     // TODO: get rid of pure heap graphs => the fact that their nodes are not necessarily distinct makes things hard ??

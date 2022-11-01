@@ -262,6 +262,7 @@ EExpr Encoding::Encode(const LogicObject& object) {
 EExpr Encoding::EncodeFormulaWithKnowledge(const Formula& formula, const SolverConfig& config) {
     return Encode(formula)
            && EncodeInvariants(formula, config)
+           && EncodePairInvariants(formula, config)
            && EncodeSimpleFlowRules(formula, config)
            && EncodeOwnership(formula)
            && EncodeAcyclicity(formula, config)
@@ -278,6 +279,18 @@ EExpr Encoding::EncodeInvariants(const Formula& formula, const SolverConfig& con
     for (const auto* mem : shared) result.push_back(Encode(*config.GetSharedNodeInvariant(*mem)));
     for (const auto* var : variables)
         if (var->Variable().isShared) result.push_back(Encode(*config.GetSharedVariableInvariant(*var)));
+    return MakeAnd(result);
+}
+
+EExpr Encoding::EncodePairInvariants(const Formula& formula, const SolverConfig& config) {
+    auto shared = plankton::Collect<SharedMemoryCore>(formula);
+    auto result = plankton::MakeVector<EExpr>(shared.size() * shared.size());
+    for (const auto* memory : shared) {
+        for (const auto* other : shared) {
+            if (memory == other) continue;
+            result.push_back(Encode(*config.GetSharedNodePairInvariant(*memory, *other)));
+        }
+    }
     return MakeAnd(result);
 }
 
