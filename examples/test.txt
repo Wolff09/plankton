@@ -1,4 +1,4 @@
-#name "LO-tree mod. WIP"
+#name "Logical Ordering Tree (most general tree overlay)"
 
 
 //*******************************************************//
@@ -21,33 +21,30 @@ Node* Min;
 Node* Max;
 
 
-// bool contains(data_t k) {
-//     Node* y, foo;
-//     y = traverse(k);
-//     @join;
+bool contains(data_t k) {
+    Node* y, foo;
+    y = traverse(k);
+    @join;
 
-//     while (k < y->key) {
-//         Node* x;
-//         x = y->pred;
-//         y = x;
-//     }
-//     while (y->mark) {
-//         Node* x;
-//         atomic {
-//             x = y->pred;
-//             // assume(x->key < y->key); // ~~ use non-local invariant
-//         }
-//         y = x;
-//     }
-//     while (y->key < k) {
-//         Node* z;
-//         z = y->succ;
-//         y = z;
-//     }
+    while (k < y->key) {
+        Node* x;
+        x = y->pred;
+        y = x;
+    }
+    while (y->mark) {
+        Node* x;
+        x = y->pred;
+        y = x;
+    }
+    while (y->key < k) {
+        Node* z;
+        z = y->succ;
+        y = z;
+    }
 
-//     if (y->key == k) return true;
-//     else return false;
-// }
+    if (y->key == k) return true;
+    else return false;
+}
 
 
 bool insert(data_t k) {
@@ -68,15 +65,11 @@ bool insert(data_t k) {
     y->right = NULL;
     y->parent = p;
     y->pred = x;
-    assert(x->key < y->key); // ~~ establish non-local invariant
     y->succ = z;
-    assert(y->key < z->key); // ~~ establish non-local invariant
     // __lock__(y->treeLock);
 
     assertFlow(k, x);
-    assert(x->key < y->key); // ~~ establish non-local invariant
     x->succ = y;
-    assert(y->key < z->key); // ~~ establish non-local invariant
     z->pred = y;
     __unlock__(x->listLock);
     performTreeInsertion(y, p);
@@ -96,15 +89,10 @@ bool remove(data_t k) {
 
     __lock__(y->listLock);
     prepareTreeDeletion(y);
-    atomic {
-        z = y->succ;
-        // assume(y->key < z->key); // ~~ use non-local invariant
-    }
+    z = y->succ;
     y->mark = true;
     z->pred = x;
-    assert(x->key < z->key); // ~~ establish non-local invariant
     x->succ = z; // logical deletion
-    assert(x->key < z->key); // ~~ establish non-local invariant
     __unlock__(y->listLock);
     __unlock__(x->listLock);
     performTreeDeletion(y);
@@ -149,16 +137,6 @@ inline <Node*, Node*> locate(data_t k) {
 }
 
 
-// inline void lockWithHint(Node* ptr) {
-//     atomic {
-//         __lock__(ptr->lock);
-//         __unlock__(ptr->lock);
-//         choose { assume(ptr->mark == true); }{ assume(ptr->mark == false); }
-//         __lock__(ptr->lock);
-//     }
-// }
-
-
 //*******************************************************//
 //********************** INVARIANT **********************//
 //*******************************************************//
@@ -197,22 +175,6 @@ def @invariant[shared](Node* x) {
     // structure
  && x->key != MAX ==> x->succ != NULL
  && x->key != MIN ==> x->pred != NULL
-    //
-    //
-    // wip
- // && Min->pred == NULL
- // && Max->succ == NULL
- // && x->succ != NULL ==> x->key != MAX
- // && x->pred != NULL ==> x->key != MIN
- //
- // && Min != x->succ // TODO: the encoding of this is wrong!!
- // && Max != x->pred // TODO: the encoding of this is wrong!!
- // && x->key != MIN && x->key != MAX ==> x->parent != NULL
- // && x->parent != NULL ==> x->key != MIN && x->key != MAX
- // && MIN < x->key && x->key < MAX ==> x->parent != NULL
-    // non-local
- // && (!x->mark && x->lock == UNLOCKED) ==> "succ not marked"
- // && (x->_flow != 0) ==> "pred flow not empty
 }
 
 def @invariant[pairwise](Node* x, Node* y) {
@@ -250,6 +212,9 @@ void __init__() {
 //*******************************************************//
 
 inline Node* prepareTreeInsertion(Node* x, Node* z) {
+    @stub Node::left;
+    @stub Node::right;
+    @stub Node::parent;
     @stub Node::treeLock;
     choose{ return x; }{ return z; }
 }
@@ -263,6 +228,9 @@ inline void performTreeInsertion(Node* y, Node* p) {
 
 
 inline void prepareTreeDeletion(Node* y) {
+    @stub Node::left;
+    @stub Node::right;
+    @stub Node::parent;
     @stub Node::treeLock;
 }
 
