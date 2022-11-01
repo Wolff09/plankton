@@ -103,6 +103,13 @@ void ProofGenerator::AddNewInterference(std::deque<std::unique_ptr<HeapEffect>> 
 
 bool ProofGenerator::ConsolidateNewInterference() {
     INFO(infoPrefix << "Checking for new effects. (" << newInterference.size() << ") " << std::endl)
+    if (!setup.interferenceTrackEffectHalo) {
+        for (auto& elem : newInterference) {
+            elem->preHalo.clear();
+            elem->postHalo.clear();
+        }
+    }
+
     auto result = solver.AddInterference(std::move(newInterference));
     newInterference.clear();
     return result;

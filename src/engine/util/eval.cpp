@@ -109,3 +109,30 @@ std::unique_ptr<Formula> plankton::TryMakeSymbolic(const SymbolicHeapExpression&
     expression.Accept(eval);
     return std::move(eval.result);
 }
+
+std::unique_ptr<Formula> plankton::TryMakeSymbolic(const SymbolicHeapExpression& expression, const Formula& context) {
+    return plankton::TryMakeSymbolic(expression, [&context](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
+        auto mem = plankton::TryGetResource(adr, context);
+        if (!mem) return nullptr;
+        return plankton::Copy(*mem);
+    });
+}
+
+std::unique_ptr<Formula> plankton::TryMakeSymbolic(const std::vector<std::unique_ptr<SymbolicHeapExpression>>& expressions, const MemoryLookup& adrToMem, bool ignoreFailed) {
+    auto result = std::make_unique<SeparatingConjunction>();
+    for (const auto& expr : expressions) {
+        auto symbolic = plankton::TryMakeSymbolic(*expr, adrToMem);
+        if (!symbolic && ignoreFailed) continue;
+        if (!symbolic) return nullptr;
+        result->Conjoin(std::move(symbolic));
+    }
+    return result;
+}
+
+std::unique_ptr<Formula> plankton::TryMakeSymbolic(const std::vector<std::unique_ptr<SymbolicHeapExpression>>& expressions, const Formula& context, bool ignoreFailed) {
+    return plankton::TryMakeSymbolic(expressions, [&context](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
+        auto mem = plankton::TryGetResource(adr, context);
+        if (!mem) return nullptr;
+        return plankton::Copy(*mem);
+    }, ignoreFailed);
+}

@@ -37,17 +37,9 @@ struct InterferenceInfo {
     }
 
     inline EExpr EncodePreHalo(Encoding& encoding, const HeapEffect& effect) const {
-        auto result = plankton::MakeVector<EExpr>(effect.preHalo.size());
-        for (const auto& expr : effect.preHalo) {
-            auto symbolic = plankton::TryMakeSymbolic(*expr, [this](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
-                auto* resource = plankton::TryGetResource(adr, *annotation->now);
-                if (resource) return plankton::Copy(*resource);
-                return nullptr;
-            });
-            if (!symbolic) continue;
-            result.push_back(encoding.Encode(*symbolic));
-        }
-        return encoding.MakeAnd(result);
+        auto symbolic = plankton::TryMakeSymbolic(effect.preHalo, *annotation->now, true);
+        if (!symbolic) return encoding.Bool(true);
+        return encoding.Encode(*symbolic);
     }
 
     inline void Handle(SharedMemoryCore& memory, const HeapEffect& effect, Encoding& encoding) {

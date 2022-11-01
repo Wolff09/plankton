@@ -20,6 +20,9 @@ namespace plankton {
         // proof
         std::size_t proofMaxIterations = 7;
 
+        // interference
+        bool interferenceTrackEffectHalo = false;
+
         explicit EngineSetup() = default;
     };
 

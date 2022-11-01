@@ -43,6 +43,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     TCLAP::SwitchArg gistSwitch("g", "gist", "Print machine readable gist at the very end", cmd, false);
     TCLAP::UnlabeledValueArg<std::string> programArg("input", "Input file with program code and flow definition", true, "", isFile.get(), cmd);
 
+    TCLAP::SwitchArg effectHaloSwitch("", "halo", "Computes more precise interferences, tracking a halo around the updated memory location", cmd, false);
     TCLAP::SwitchArg loopWidenSwitch("", "loopWiden", "Computes fixed points for loops using a widening, rather than a join", cmd, false);
     TCLAP::SwitchArg loopNoPostJoinSwitch("", "loopNoPostJoin", "Turns off joining loop post annotations", cmd, false);
     TCLAP::SwitchArg macroNoTabulationSwitch("", "macroNoTabulate", "Turns off tabulation of macro post annotations", cmd, false);
@@ -59,6 +60,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
     input.setup.loopMaxIterations = loopMaxIterArg.getValue();
     input.setup.proofMaxIterations = proofMaxIterArg.getValue();
+    input.setup.interferenceTrackEffectHalo = effectHaloSwitch.getValue();
 
     return input;
 }

@@ -8,12 +8,12 @@
 struct Node {
     thread_t treeLock;
     thread_t listLock;
-	data_t key;
-	Node* left;
+    data_t key;
+    Node* left;
     Node* right;
     Node* parent;
     Node* pred;
-	Node* succ;
+    Node* succ;
     bool mark;
 }
 
@@ -21,32 +21,33 @@ Node* Min;
 Node* Max;
 
 
-// bool contains(data_t k) {
-//     Node* y;
-//     y = traverse(k);
-//     @join;
+bool contains(data_t k) {
+    Node* y, foo;
+    y = traverse(k);
+    @join;
 
-//     while (y->mark) {
-//         Node* x;
-//         x = y->pred;
-//         y = x;
-//     }
-//     while (k < y->key) {
-//         Node* x;
-//         atomic{x = y->pred;
-//         assumeFlow(MAX, x);} // ~~ assume interpolation "x->flow != 0 ==> x->pred->flow != 0"
-//         y = x;
-//     }
-//     // assumeFlow(MAX, x);
-//     while (y->key < k) {
-//         Node* z;
-//         z = y->succ;
-//         y = z;
-//     }
+    while (k < y->key) {
+        Node* x;
+        x = y->pred;
+        y = x;
+    }
+    while (y->mark) {
+        Node* x;
+        atomic {
+            x = y->pred;
+            assume(x->key < y->key); // ~~ use non-local invariant
+        }
+        y = x;
+    }
+    while (y->key < k) {
+        Node* z;
+        z = y->succ;
+        y = z;
+    }
 
-//     if (y->key == k) return true;
-//     else return false;
-// }
+    if (y->key == k) return true;
+    else return false;
+}
 
 
 bool insert(data_t k) {
@@ -67,12 +68,16 @@ bool insert(data_t k) {
     y->right = NULL;
     y->parent = p;
     y->pred = x;
+    assert(x->key < y->key); // ~~ establish non-local invariant
     y->succ = z;
+    assert(y->key < z->key); // ~~ establish non-local invariant
     // __lock__(y->treeLock);
 
     assertFlow(k, x);
     x->succ = y;
+    assert(x->key < y->key); // ~~ establish non-local invariant
     z->pred = y;
+    assert(y->key < z->key); // ~~ establish non-local invariant
     __unlock__(x->listLock);
     performTreeInsertion(y, p);
     return true;
@@ -91,11 +96,15 @@ bool remove(data_t k) {
 
     __lock__(y->listLock);
     prepareTreeDeletion(y);
-    z = y->succ;
+    atomic {
+        z = y->succ;
+        assume(y->key < z->key); // ~~ use non-local invariant
+    }
     y->mark = true;
-    assertFlow(MAX, x);
     z->pred = x;
+    assert(x->key < z->key); // ~~ establish non-local invariant
     x->succ = z; // logical deletion
+    assert(x->key < z->key); // ~~ establish non-local invariant
     __unlock__(y->listLock);
     __unlock__(x->listLock);
     performTreeDeletion(y);

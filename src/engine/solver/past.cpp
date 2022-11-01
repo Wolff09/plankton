@@ -9,6 +9,9 @@
 
 using namespace plankton;
 
+//
+// TODO: use effect halo
+//
 
 inline Encoding MakeEncoding(const Annotation& annotation, const SolverConfig& config) {
     Encoding encoding(*annotation.now, config);
@@ -328,6 +331,9 @@ struct Interpolator {
     }
 
     inline void InterpolateEffectPastToNow(const SharedMemoryCore& past, const std::string& field, const SymbolDeclaration& interpolatedValue) {
+        //
+        // TODO: use effect halo
+        //
         auto& pastValue = past.fieldToValue.at(field)->Decl();
         if (interpolatedValue == pastValue) return;
 
@@ -360,6 +366,9 @@ struct Interpolator {
     }
 
     inline void InterpolateDeepPastToNow(const SharedMemoryCore& past, const std::string& field, const SymbolDeclaration& interpolatedValue, SeparatingConjunction& newNowKnowledge) {
+        //
+        // TODO: use effect halo
+        //
         //DEBUG("INTERPOL (deep): [past] " << past << "  [field] " << field << "  [interpolatedValue] " << interpolatedValue << std::endl)
         auto pastKnowledge = std::make_unique<SeparatingConjunction>();
         pastKnowledge->Conjoin(MakeStackDuplicable(ExtractKnowledge(past.flow->Decl(), *annotation.now)));

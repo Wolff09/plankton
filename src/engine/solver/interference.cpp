@@ -65,18 +65,12 @@ struct MemoryMap {
     }
 };
 
-EExpr EncodeHalo(Encoding& encoding, const SymbolicHeapExpression& halo, MemoryMap& memMap) {
+EExpr EncodeHalo(Encoding& encoding, const std::vector<std::unique_ptr<SymbolicHeapExpression>>& halo, MemoryMap& memMap) {
     auto symbolic = plankton::TryMakeSymbolic(halo, [&memMap](const SymbolDeclaration& adr) -> std::unique_ptr<MemoryAxiom> {
         return plankton::Copy(memMap.Get(adr));
     });
     if (symbolic) return encoding.Encode(*symbolic);
     throw std::logic_error("Internal error: failed to encode effect halo.");
-}
-
-EExpr EncodeHalo(Encoding& encoding, const std::vector<std::unique_ptr<SymbolicHeapExpression>>& halo, MemoryMap& memMap) {
-    auto result = plankton::MakeVector<EExpr>(halo.size());
-    for (const auto& elem : halo) result.push_back(EncodeHalo(encoding, *elem, memMap));
-    return encoding.MakeAnd(result);
 }
 
 EExpr EncodeMemoryEqualities(const MemoryMap& map, Encoding& encoding) {

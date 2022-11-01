@@ -28,8 +28,10 @@ namespace plankton {
     std::unique_ptr<SymbolicExpression> TryMakeSymbolic(const ValueExpression& expression, const Formula& context);
 
     using MemoryLookup = std::function<std::unique_ptr<MemoryAxiom>(const SymbolDeclaration&)>;
-    // std::unique_ptr<MemoryAxiom> GetResource(const SymbolicHeapExpression& expr, const MemoryLookup& adrToMem);
+    std::unique_ptr<Formula> TryMakeSymbolic(const SymbolicHeapExpression& expression, const Formula& context);
     std::unique_ptr<Formula> TryMakeSymbolic(const SymbolicHeapExpression& expression, const MemoryLookup& adrToMem);
+    std::unique_ptr<Formula> TryMakeSymbolic(const std::vector<std::unique_ptr<SymbolicHeapExpression>>& expressions, const Formula& context, bool ignoreFailed=false);
+    std::unique_ptr<Formula> TryMakeSymbolic(const std::vector<std::unique_ptr<SymbolicHeapExpression>>& expressions, const MemoryLookup& adrToMem, bool ignoreFailed=false);
 
     bool UpdatesFlow(const HeapEffect& effect);
     bool UpdatesField(const HeapEffect& effect, const std::string& field);
