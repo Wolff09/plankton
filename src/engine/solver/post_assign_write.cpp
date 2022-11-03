@@ -239,6 +239,7 @@ inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
         for (const auto& other : info.footprint.nodes) {
             if (other.postLocal) continue;
             if (node.address == other.address) continue;
+
             auto nodeMem = asShared(node.ToLogic(EMode::POST));
             auto otherMem = asShared(other.ToLogic(EMode::POST));
             auto invariant = info.config.GetSharedNodePairInvariant(*nodeMem, *otherMem);
@@ -247,6 +248,14 @@ inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
                 if (holds) return;
                 throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + other.address.name + "'."); // TODO: better error handling
             });
+
+            // DEBUG
+            DEBUG("~chk pair-inv for:   " << *nodeMem << std::endl)
+            DEBUG("                   + " << *otherMem << std::endl)
+            for (const auto& elem : invariant->conjuncts) {
+                auto holds = info.encoding.Implies(*elem);
+                DEBUG("   - " << holds << ": " << *elem << std::endl)
+            }
         }
     }
 
@@ -304,12 +313,28 @@ inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
             auto checkRev = (distinct && alias && placeholderInv && preInvRev) >> postInvRev;
             info.encoding.AddCheck(check, [&node,name=placeholder->node->Decl().name](bool holds){
                 if (holds) return;
-                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + name + "'."); // TODO: better error handling
+                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + name + "' (anon)."); // TODO: better error handling
             });
             info.encoding.AddCheck(checkRev, [&node,name=placeholder->node->Decl().name](bool holds){
                 if (holds) return;
-                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + name + "', '" + node.address.name + "'."); // TODO: better error handling
+                throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + name + " (anon)', '" + node.address.name + "'."); // TODO: better error handling
             });
+
+            // DEBUG
+            DEBUG("~chk pair-inv for:   " << *postMem << std::endl)
+            DEBUG("                   + " << *placeholder << "(anon)" << std::endl)
+            auto inv = info.config.GetSharedNodePairInvariant(*postMem, *placeholder);
+            for (const auto& elem : inv->conjuncts) {
+                auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInv) >> info.encoding.Encode(*elem));
+                DEBUG("   - " << holds << ": " << *elem << std::endl)
+            }
+            DEBUG("~chk pair-inv for:   " << *placeholder << "(anon)" << std::endl)
+            DEBUG("                   + " << *postMem << std::endl)
+            auto invRev = info.config.GetSharedNodePairInvariant(*placeholder, *postMem);
+            for (const auto& elem : invRev->conjuncts) {
+                auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInvRev) >> info.encoding.Encode(*elem));
+                DEBUG("   - " << holds << ": " << *elem << std::endl)
+            }
         }
     }
 }

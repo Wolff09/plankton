@@ -56,6 +56,7 @@ PostImage Solver::Post(std::unique_ptr<Annotation> pre, const VariableAssignment
     }
     
     plankton::InlineAndSimplify(*pre);
+    plankton::ExtendStack(*pre, config, ExtensionPolicy::FAST);
     DEBUG(*pre << std::endl << std::endl)
     // TODO: extend stack? expand memory? find fulfillments?
     return PostImage(std::move(pre));

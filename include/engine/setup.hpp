@@ -18,6 +18,7 @@ namespace plankton {
         bool macrosTabulateInvocations = true;
 
         // proof
+        bool useFutures = true;
         std::size_t proofMaxIterations = 7;
 
         // interference

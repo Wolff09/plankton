@@ -59,38 +59,36 @@ void __init__() {
 }
 
 
-inline <Node*, Node*, data_t> locate(data_t key) {
+inline <Node*, Node*> locate(data_t key) {
 	while (true) {
-        Node* left, lnext, right, rnext;
-        bool rmark;
-        data_t k;
+		Node* left, lnext, right, rnext;
+		bool rmark;
 
-        // traverse
-        right = Head;
-        <rmark, rnext> = <Head->marked, Head->next>;
-        do {
-            assume(rmark || k < key); // repeated loop condition for join precision
-            if (!rmark) {
-                left = right;
-                lnext = rnext;
-            }
-            right = rnext;
-            k = right->val;
-            if (right == Tail) break;
-            <rmark, rnext> = <right->marked, right->next>;
-        } while (rmark || k < key);
+		// traverse
+		right = Head;
+		<rmark, rnext> = <Head->marked, Head->next>;
+		do {
+		    assume(rmark || right->val < key); // repeated loop condition for join precision
+			if (!rmark) {
+				left = right;
+				lnext = rnext;
+			}
+			right = rnext;
+			if (right == Tail) break;
+			<rmark, rnext> = <right->marked, right->next>;
+		} while (rmark || right->val < key);
 
 		// left and right are successors
 		if (lnext == right) {
 			if (right == Tail || !right->marked) {
-				return <left, right, k>;
+				return <left, right>;
 			}
 		}
 
 		// unlink marked nodes between left and right (potentially unboundedly many)
 		if (CAS(<left->marked, left->next>, <false, lnext>, <false, right>)) {
 			if (right == Tail || !right->marked) {
-				return <left, right, k>;
+				return <left, right>;
 			}
 		}
 	}
@@ -98,24 +96,23 @@ inline <Node*, Node*, data_t> locate(data_t key) {
 
 bool contains(data_t key) {
 	Node* left, right;
-	data_t k;
 
-	<left, right, k> = locate(key);
-	return k == key;
+	<left, right> = locate(key);
+	return right->val == key;
 }
 
 bool add(data_t key) {
 	Node* entry;
+
 	entry = malloc;
 	entry->val = key;
 	entry->marked = false;
 
 	while (true) {
 		Node* left, right;
-		data_t k;
-		<left, right, k> = locate(key);
+		<left, right> = locate(key);
 
-		if (k == key) {
+		if (right->val == key) {
             return false;
 
 		} else {
@@ -130,10 +127,9 @@ bool add(data_t key) {
 bool remove(data_t key) {
 	while (true) {
 		Node* left, right;
-		data_t k;
-		<left, right, k> = locate(key);
+		<left, right> = locate(key);
 
-		if (k > key) {
+		if (right->val > key) {
 			return false;
 
 		} else {
@@ -141,7 +137,7 @@ bool remove(data_t key) {
             next = right->next;
 			if (CAS(<right->marked, right->next>, <false, next>, <true, next>)) {
                 CAS(<left->marked, left->next>, <false, right>, <false, next>);
-                // <left, right, k> = locate(key);
+                // <left, right> = locate(key);
                 return true;
 			}
 		}

@@ -24,7 +24,7 @@ Node* Max;
 bool contains(data_t k) {
     Node* y, foo;
     y = traverse(k);
-    @join;
+    @join; // noop, makes proof faster
 
     while (k < y->key) {
         Node* x;
@@ -83,7 +83,7 @@ bool remove(data_t k) {
 
     assertFlow(k, y);
     if (y->key != k) {
-        __unlock__(x->listLock); // MISSING IN OUR PAPER!?
+        __unlock__(x->listLock);
         return false;
     }
 
@@ -124,9 +124,7 @@ inline <Node*, Node*> locate(data_t k) {
         y = traverse(k);
         if (y->key < k) x = y;
         else x = y->pred;
-        assume(x != Max); // ## TODO: invariante wird falsch übersetzt! Min wird immer mit Knoten x belegt, was falsch ist!
-        @join;
-        assert(x != Max);
+        @join; // noop, makes proof faster
         __lock__(x->listLock);
         z = x->succ;
         if (x->key < k && k <= z->key && !x->mark) {
@@ -160,21 +158,21 @@ def @invariant[shared](Node* x) {
     Min != NULL
  && Min->key == MIN
  && Min->mark == false
- && Min->succ != NULL
  && x->key == MIN ==> x == Min
- && [MIN, MAX] in Min->_flow
     // Max
  && Max != NULL
  && Max->key == MAX
  && Max->mark == false
- && Max->pred != NULL
  && x->key == MAX ==> x == Max
     // flow
+ && [MIN, MAX] in Min->_flow
  && x->_flow != 0 ==> [x->key, MAX] in x->_flow
  && !x->mark ==> x->_flow != 0
     // structure
- && x->key != MAX ==> x->succ != NULL
- && x->key != MIN ==> x->pred != NULL
+ && x->succ == NULL ==> x == Max
+ && x->pred == NULL ==> x == Min
+ && x == Max ==> x->succ == NULL
+ && x == Min ==> x->pred == NULL
 }
 
 def @invariant[pairwise](Node* x, Node* y) {
