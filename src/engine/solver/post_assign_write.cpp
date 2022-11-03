@@ -249,13 +249,13 @@ inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
                 throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + node.address.name + "', '" + other.address.name + "'."); // TODO: better error handling
             });
 
-            // DEBUG
-            DEBUG("~chk pair-inv for:   " << *nodeMem << std::endl)
-            DEBUG("                   + " << *otherMem << std::endl)
-            for (const auto& elem : invariant->conjuncts) {
-                auto holds = info.encoding.Implies(*elem);
-                DEBUG("   - " << holds << ": " << *elem << std::endl)
-            }
+            // // DEBUG
+            // DEBUG("~chk pair-inv for:   " << *nodeMem << std::endl)
+            // DEBUG("                   + " << *otherMem << std::endl)
+            // for (const auto& elem : invariant->conjuncts) {
+            //     auto holds = info.encoding.Implies(*elem);
+            //     DEBUG("   - " << holds << ": " << *elem << std::endl)
+            // }
         }
     }
 
@@ -320,21 +320,21 @@ inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
                 throw std::logic_error("Unsafe update: invariant is not maintained for node pair '" + name + " (anon)', '" + node.address.name + "'."); // TODO: better error handling
             });
 
-            // DEBUG
-            DEBUG("~chk pair-inv for:   " << *postMem << std::endl)
-            DEBUG("                   + " << *placeholder << "(anon)" << std::endl)
-            auto inv = info.config.GetSharedNodePairInvariant(*postMem, *placeholder);
-            for (const auto& elem : inv->conjuncts) {
-                auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInv) >> info.encoding.Encode(*elem));
-                DEBUG("   - " << holds << ": " << *elem << std::endl)
-            }
-            DEBUG("~chk pair-inv for:   " << *placeholder << "(anon)" << std::endl)
-            DEBUG("                   + " << *postMem << std::endl)
-            auto invRev = info.config.GetSharedNodePairInvariant(*placeholder, *postMem);
-            for (const auto& elem : invRev->conjuncts) {
-                auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInvRev) >> info.encoding.Encode(*elem));
-                DEBUG("   - " << holds << ": " << *elem << std::endl)
-            }
+            // // DEBUG
+            // DEBUG("~chk pair-inv for:   " << *postMem << std::endl)
+            // DEBUG("                   + " << *placeholder << "(anon)" << std::endl)
+            // auto inv = info.config.GetSharedNodePairInvariant(*postMem, *placeholder);
+            // for (const auto& elem : inv->conjuncts) {
+            //     auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInv) >> info.encoding.Encode(*elem));
+            //     DEBUG("   - " << holds << ": " << *elem << std::endl)
+            // }
+            // DEBUG("~chk pair-inv for:   " << *placeholder << "(anon)" << std::endl)
+            // DEBUG("                   + " << *postMem << std::endl)
+            // auto invRev = info.config.GetSharedNodePairInvariant(*placeholder, *postMem);
+            // for (const auto& elem : invRev->conjuncts) {
+            //     auto holds = info.encoding.Implies((distinct && alias && placeholderInv && preInvRev) >> info.encoding.Encode(*elem));
+            //     DEBUG("   - " << holds << ": " << *elem << std::endl)
+            // }
         }
     }
 }
