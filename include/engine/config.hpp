@@ -50,7 +50,17 @@ namespace plankton {
          */
         [[nodiscard]] virtual std::unique_ptr<ImplicationSet>
         GetSharedNodeInvariant(const SharedMemoryCore& memory) const = 0;
-        
+
+
+        /**
+         * An invariant 'I(node, node)' that is implicitly universally quantified over all pairs of shared nodes in the heap.
+         * @param memory The first node that the invariant should be instantiated for.
+         * @param other The second node that the invariant should be instantiated for.
+         * @return Instantiated invariant.
+         */
+        [[nodiscard]] virtual std::unique_ptr<ImplicationSet>
+        GetSharedNodePairInvariant(const SharedMemoryCore& memory, const SharedMemoryCore& other) const = 0;
+
         /**
          * An invariant 'I(variable)' for the given shared variable.
          * @param variable The variable that the invariant should be instantiated for.

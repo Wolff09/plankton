@@ -47,7 +47,6 @@ void ProofGenerator::GenerateProof() {
 
         macroPostTable.clear();
         infoPrefix.Pop();
-        if (!firstRound) throw std::logic_error("--- breakpoint ---");
         firstRound = false;
     }
     throw std::logic_error("Aborting: proof does not seem to stabilize."); // TODO: remove / better error handling

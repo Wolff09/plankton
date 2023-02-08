@@ -314,6 +314,7 @@ struct Interpolator {
 
             Encoding encoding = MakeEncoding(*past, config);
             plankton::MakeMemoryAccessible(*past->now, expansion, flowType, factory, encoding);
+            encoding = MakeEncoding(*past, config); // add the invariants for the newly accessible memory
 
             std::deque<std::unique_ptr<Axiom>> candidates;
             for (auto memory : plankton::CollectMutable<SharedMemoryCore>(*past->now)) {

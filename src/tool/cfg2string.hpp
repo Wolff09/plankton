@@ -70,6 +70,17 @@ namespace plankton {
             stream << "shared invariant for " << type->name << "::" << *dummyMem << ":";
             stream << LB << INDENT  << *instance << LB;
         }
+        stream << LB;
+
+        for (const auto& type: program.types) {
+            auto typeMem = plankton::MakeSharedMemory(factory.GetFreshFO(*type), flowType, factory);
+            for (const auto& other: program.types) {
+                auto otherMem = plankton::MakeSharedMemory(factory.GetFreshFO(*other), flowType, factory);
+                auto instance = config.GetSharedNodePairInvariant(*typeMem, *otherMem);
+                stream << "shared pairwise invariant for " << type->name << "::" << *typeMem << " and " << other->name << "::" << *otherMem << ":";
+                stream << LB << INDENT << *instance << LB;
+            }
+        }
         
         stream << LB << "//" << LB << "// END solver config" << LB << "//" << LB;
         return stream.str();

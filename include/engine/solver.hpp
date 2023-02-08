@@ -16,12 +16,9 @@ namespace plankton {
         std::unique_ptr<SharedMemoryCore> pre; // memory before update
         std::unique_ptr<SharedMemoryCore> post; // memory after update
         std::unique_ptr<Formula> context; // stack context of pre/post (not a frame!)
-        std::vector<std::unique_ptr<BinaryExpression>> halo; // stack context beyond pre/post
     
         explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
                             std::unique_ptr<Formula> context);
-        explicit HeapEffect(std::unique_ptr<SharedMemoryCore> pre, std::unique_ptr<SharedMemoryCore> post,
-                            std::unique_ptr<Formula> context, std::vector<std::unique_ptr<BinaryExpression>> halo);
     };
 
     struct PostImage final {
@@ -70,6 +67,7 @@ namespace plankton {
         [[nodiscard]] std::unique_ptr<Annotation> ReduceFuture(std::unique_ptr<Annotation> annotation) const;
 
         private:
+            const Program& program;
             const SolverConfig& config;
             DataFlowAnalysis dataFlow;
             std::deque<std::unique_ptr<HeapEffect>> interference;

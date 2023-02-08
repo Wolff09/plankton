@@ -6,27 +6,16 @@ using namespace plankton;
 
 
 HeapEffect::HeapEffect(std::unique_ptr<SharedMemoryCore> before, std::unique_ptr<SharedMemoryCore> after,
-                       std::unique_ptr<Formula> ctx, std::vector<std::unique_ptr<BinaryExpression>> haloCtx)
-        : pre(std::move(before)), post(std::move(after)), context(std::move(ctx)), halo{std::move(haloCtx)} {
+                       std::unique_ptr<Formula> ctx)
+        : pre(std::move(before)), post(std::move(after)), context(std::move(ctx)) {
     assert(pre);
     assert(post);
     assert(pre->node->Decl() == post->node->Decl());
     assert(context);
-    assert(plankton::AllNonNull(halo));
 }
 
-HeapEffect::HeapEffect(std::unique_ptr<SharedMemoryCore> before, std::unique_ptr<SharedMemoryCore> after, std::unique_ptr<Formula> ctx)
-        : HeapEffect(std::move(before), std::move(after), std::move(ctx), {}) {}
-
 std::ostream& plankton::operator<<(std::ostream& out, const HeapEffect& object) {
-    out << "[ " << *object.pre << " ~~> " << *object.post << " | " << *object.context << " |";
-    bool first = true;
-    for (const auto& elem : object.halo) {
-        if (!first) out << ",";
-        out << " " << *elem;
-        first = false;
-    }
-    out << " ]";
+    out << "[ " << *object.pre << " ~~> " << *object.post << " | " << *object.context << " ]";
     return out;
 }
 
@@ -100,7 +89,7 @@ struct AssumptionChecker : DefaultProgramVisitor {
     }
 };
 
-Solver::Solver(const Program& program, const SolverConfig& config) : config(config), dataFlow(program) {
+Solver::Solver(const Program& program, const SolverConfig& config) : program(program), config(config), dataFlow(program) {
     // sanity check
     AssumptionChecker checker;
     program.Accept(checker);
