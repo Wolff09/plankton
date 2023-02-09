@@ -7,6 +7,14 @@
 #include "engine/config.hpp"
 
 namespace plankton {
+
+    inline std::string AcyclicityToStrong(SolverConfig::Acyclicity type) {
+        switch (type) {
+            case SolverConfig::PHYSICAL: return "physical";
+            case SolverConfig::EFFECTIVE: return "effective";
+            case SolverConfig::NONE: return "none";
+        }
+    }
     
     inline std::string ConfigToString(const SolverConfig& config, const Program& program) {
         constexpr std::string_view LB = "\n";
@@ -17,8 +25,9 @@ namespace plankton {
         auto& flowType = config.GetFlowValueType();
         
         stream << "//" << LB << "// BEGIN solver config" << LB << "//" << LB << LB;
+        stream << "acyclicity type:  " << AcyclicityToStrong(config.GetGraphAcyclicity()) << LB << LB;
         stream << "flow value type:  Set<" << flowType.name << ">" << LB << LB;
-        
+
         for (const auto& type : program.types) {
             for (const auto& pair : type->fields) {
                 stream << "footprint depth for " << type->name << "::" << pair.first;
