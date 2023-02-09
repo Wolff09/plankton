@@ -212,7 +212,7 @@ struct FlowGraphGenerator {
 
             bool publish = !node->postLocal;
             for (auto& field : node->pointerFields) {
-                if (plankton::IsOutflowFalse(node->address.type, field.name, graph.config)) continue;
+                // if (plankton::IsOutflowFalse(node->address.type, field.name, graph.config)) continue;
                 for (auto mode : AllEMode) {
                     auto& nextAddress = field.Value(mode);
                     if (auto nextNode = TryGetOrCreateNode(nextAddress)) {
