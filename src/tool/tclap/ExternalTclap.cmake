@@ -19,12 +19,14 @@ if (NOT TCLAP_GENERATED_SRC_DIR)
 endif()
 
 # build provided TCLAP version
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
 ExternalProject_ADD(
   tclap
   PREFIX             ${TCLAP_LOCAL_ROOT}
   URL                ${TCLAP_REPO_URL}
   URL_HASH           MD5=${TCLAP_REPO_HASH}
-  DOWNLOAD_EXTRACT_TIMESTAMP 1
   SOURCE_DIR         ${TCLAP_LOCAL_ROOT}/tclap
   BUILD_IN_SOURCE    TRUE
   CONFIGURE_COMMAND  ""

@@ -7,6 +7,10 @@ if(NOT DEFINED ANTLR4_ZIP_HASH)
   message(FATAL_ERROR "Missing MD5 hash for ANTLR zip repository.")
 endif()
 
+if(POLICY CMP0114)
+  cmake_policy(SET CMP0114 NEW)
+endif()
+
 include(ExternalProject)
 
 set(ANTLR4_ROOT ${CMAKE_CURRENT_BINARY_DIR}/antlr4_runtime/src/antlr4_runtime)
@@ -82,6 +86,9 @@ if(NOT DEFINED ANTLR4_WITH_STATIC_CRT)
   set(ANTLR4_WITH_STATIC_CRT ON)
 endif()
 
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
 if(ANTLR4_ZIP_REPOSITORY)
   ExternalProject_Add(
       antlr4_runtime
@@ -89,7 +96,6 @@ if(ANTLR4_ZIP_REPOSITORY)
       URL ${ANTLR4_ZIP_REPOSITORY}
       URL_HASH MD5=${ANTLR4_ZIP_HASH}
       DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-      DOWNLOAD_EXTRACT_TIMESTAMP 1
       BUILD_COMMAND ""
       BUILD_IN_SOURCE 1
       SOURCE_DIR ${ANTLR4_ROOT}
@@ -97,6 +103,7 @@ if(ANTLR4_ZIP_REPOSITORY)
       CMAKE_CACHE_ARGS
           -DCMAKE_BUILD_TYPE:STRING=RELEASE
           -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+          -DDISABLE_WARNINGS:BOOL=ON
           # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
           -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
       INSTALL_COMMAND ""
@@ -108,7 +115,6 @@ else()
       GIT_REPOSITORY ${ANTLR4_GIT_REPOSITORY}
       GIT_TAG ${ANTLR4_TAG}
       DOWNLOAD_DIR ${CMAKE_CURRENT_BINARY_DIR}
-      DOWNLOAD_EXTRACT_TIMESTAMP 1
       BUILD_COMMAND ""
       BUILD_IN_SOURCE 1
       SOURCE_DIR ${ANTLR4_ROOT}
@@ -116,6 +122,7 @@ else()
       CMAKE_CACHE_ARGS
           -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
           -DWITH_STATIC_CRT:BOOL=${ANTLR4_WITH_STATIC_CRT}
+          -DDISABLE_WARNINGS:BOOL=ON
           # -DCMAKE_CXX_STANDARD:STRING=17 # if desired, compile the runtime with a different C++ standard
           # -DCMAKE_CXX_STANDARD:STRING=${CMAKE_CXX_STANDARD} # alternatively, compile the runtime with the same C++ standard as the outer project
       INSTALL_COMMAND ""
