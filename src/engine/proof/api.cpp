@@ -14,15 +14,10 @@ using namespace plankton;
 //
 
 void ProofGenerator::GenerateProof() {
-    // TODO: remove debug
-    // newInterference = plankton::MakeTestInterference(*program.types.at(0));
-    // ConsolidateNewInterference();
-    // throw std::logic_error("---point du break---");
     // TODO: check initializer
 
     INFO(infoPrefix << "Proof generation for '" << program.name << "' initiated." << std::endl)
     INFO(infoPrefix << "Starting with empty interference set." << std::endl)
-    futureSuggestions.clear(); // TODO: remove <<<<<<<<<<<<<<<<<<<<<<<<<<=====================================================================||||||||||||||||
     if (futureSuggestions.empty()) {
         INFO(infoPrefix << "Using no future suggestions." << std::endl)
     } else {
