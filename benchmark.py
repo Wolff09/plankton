@@ -26,6 +26,7 @@ BENCHMARKS = {  # path: [flags]
     "examples/Harris.pl": [],
     "examples/HarrisWaitFreeSearch.pl": [],
     "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
+    "examples/LO_abstract.pl": [],
 }
 
 #
