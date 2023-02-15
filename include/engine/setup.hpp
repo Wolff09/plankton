@@ -20,6 +20,11 @@ namespace plankton {
         // proof
         std::size_t proofMaxIterations = 7;
 
+        // past
+        bool improvePastIncreasedPrecisionForLinearizability = false;
+        bool improvePastIncreasedPrecisionForStability = false;
+        bool improvePastIncreasedPrecisionForAnnotations = false;
+
         explicit EngineSetup() = default;
     };
 

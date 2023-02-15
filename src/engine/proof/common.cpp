@@ -117,7 +117,7 @@ void ProofGenerator::MakeInterferenceStable(const Statement& after) {
         // TODO: improve future?
         {
             auto measure = timePastImprove.Measure();
-            annotation = solver.ImprovePast(std::move(annotation));
+            annotation = solver.ImprovePast(std::move(annotation), setup.improvePastIncreasedPrecisionForStability);
         }
         {
             auto measure = timeInterference.Measure();
@@ -153,7 +153,7 @@ void ProofGenerator::ImproveCurrentTime() {
     INFO(infoPrefix << "Improving time predicates." << INFO_SIZE << std::endl)
     ApplyTransformer([this](auto annotation) {
         auto measure = timePastImprove.Measure();
-        return solver.ImprovePast(std::move(annotation));
+        return solver.ImprovePast(std::move(annotation), setup.improvePastIncreasedPrecisionForAnnotations);
     });
     for (const auto& future : futureSuggestions) {
         ApplyTransformer([this, &future](auto annotation) {

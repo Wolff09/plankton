@@ -46,6 +46,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     TCLAP::SwitchArg loopWidenSwitch("", "loopWiden", "Computes fixed points for loops using a widening, rather than a join", cmd, false);
     TCLAP::SwitchArg loopNoPostJoinSwitch("", "loopNoPostJoin", "Turns off joining loop post annotations", cmd, false);
     TCLAP::SwitchArg macroNoTabulationSwitch("", "macroNoTabulate", "Turns off tabulation of macro post annotations", cmd, false);
+    TCLAP::SwitchArg pastMorePrecise("", "pastPrecision", "Increases the precision when dealing with past predicates (especially during interpolation)", cmd, false);
     TCLAP::ValueArg<std::size_t> loopMaxIterArg("", "loopMaxIter", "Maximal iterations for finding a loop invariant before aborting", false, 23, "integer", cmd);
     TCLAP::ValueArg<std::size_t> proofMaxIterArg("", "proofMaxIter", "Maximal iterations for finding an interference set before aborting", false, 7, "integer", cmd);
 
@@ -59,6 +60,9 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
     input.setup.loopMaxIterations = loopMaxIterArg.getValue();
     input.setup.proofMaxIterations = proofMaxIterArg.getValue();
+    input.setup.improvePastIncreasedPrecisionForLinearizability = false;
+    input.setup.improvePastIncreasedPrecisionForStability = false;
+    input.setup.improvePastIncreasedPrecisionForAnnotations = pastMorePrecise.getValue();
 
     return input;
 }

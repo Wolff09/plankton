@@ -283,6 +283,7 @@ EExpr Encoding::EncodeInvariants(const Formula& formula, const SolverConfig& con
 }
 
 EExpr Encoding::EncodePairInvariants(const Formula& formula, const SolverConfig& config) {
+    if (!config.HasSharedNodePairInvariant()) return Bool(true);
     auto shared = plankton::Collect<SharedMemoryCore>(formula);
     auto result = plankton::MakeVector<EExpr>(shared.size() * shared.size());
     for (const auto* memory : shared) {

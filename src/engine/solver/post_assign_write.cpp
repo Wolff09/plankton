@@ -217,25 +217,8 @@ inline void CheckInvariant(PostImageInfo& info) {
     }
 }
 
-inline bool IsGlobalInvariantTrue(const SolverConfig& config, const FlowGraph& graph) {
-    std::set<const Type*> types;
-    for (const auto& node : graph.nodes) types.insert(&node.address.type);
-
-    SymbolFactory factory;
-    auto& flowType = config.GetFlowValueType();
-    for (const auto& type : types) {
-        auto typeMem = plankton::MakeSharedMemory(factory.GetFreshFO(*type), flowType, factory);
-        for (const auto& other : types) {
-            auto otherMem = plankton::MakeSharedMemory(factory.GetFreshFO(*other), flowType, factory);
-            auto invariant = config.GetSharedNodePairInvariant(*typeMem, *otherMem);
-            if (!invariant->conjuncts.empty()) return false;
-        }
-    }
-    return true;
-}
-
 inline void CheckGlobalInvariant(PostImageInfo& info, const Program& program) {
-    if (IsGlobalInvariantTrue(info.config, info.footprint)) return;
+    if (!info.config.HasSharedNodePairInvariant()) return;
 
     // pairs of footprint nodes
     auto asShared = [](auto&& memory) {

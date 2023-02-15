@@ -94,6 +94,7 @@ inline std::pair<std::unique_ptr<SharedMemoryCore>, const SymbolDeclaration*> Ma
 }
 
 bool plankton::IsOutflowFalse(const Type& type, const std::string& field, const SolverConfig& config) {
+    if (!config.HasOutflow(type, field)) return true;
     assert(type.GetField(field).has_value());
     assert(type.GetField(field)->get().sort == Sort::PTR);
     Encoding encoding;

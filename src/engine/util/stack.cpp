@@ -182,8 +182,8 @@ void plankton::ExtendStack(Annotation& annotation, Encoding& encoding, Extension
 
 void plankton::ExtendStack(Annotation& annotation, const SolverConfig& config, ExtensionPolicy policy) {
     Encoding encoding(*annotation.now, config);
-    for (const auto& past : annotation.past) {
-        encoding.AddPremise(encoding.EncodeInvariants(*past->formula, config));
-    }
+    // for (const auto& past : annotation.past) {
+    //     encoding.AddPremise(encoding.EncodeInvariants(*past->formula, config));
+    // }
     plankton::ExtendStack(annotation, encoding, policy);
 }

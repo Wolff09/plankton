@@ -14,15 +14,15 @@ constexpr std::array<EMode, 2> AllEMode = {EMode::PRE, EMode::POST };
 struct UpdateMap {
     using update_list_t = std::vector<std::pair<std::string, const SymbolDeclaration*>>;
     std::map<const SymbolDeclaration*, update_list_t> lookup;
-    
+
     inline void Reset() {
         lookup.clear();
     }
-    
+
     inline void Add(const SymbolDeclaration& address, const std::string& field, const SymbolDeclaration& value) {
         lookup[&address].emplace_back(field, &value);
     }
-    
+
     [[nodiscard]] inline const update_list_t& GetUpdates(const SymbolDeclaration& address) const {
         assert(address.type.sort == Sort::PTR);
         static update_list_t empty = {};
@@ -34,16 +34,16 @@ struct UpdateMap {
 
 struct Worklist {
     std::set<std::pair<std::size_t, FlowGraphNode*>, std::greater<>> container;
-    
+
     explicit Worklist() = default;
     explicit Worklist(std::size_t size, FlowGraphNode& node) { Add(size, node); }
-    
+
     [[nodiscard]] inline bool Empty() const { return container.empty(); }
-    
+
     inline bool Add(std::size_t size, FlowGraphNode& node) {
         return container.emplace(size, &node).second;
     }
-    
+
     inline std::pair<std::size_t, FlowGraphNode*> Take() {
         auto element = *container.begin();
         container.erase(container.begin());
@@ -53,7 +53,7 @@ struct Worklist {
 
 inline FlowGraphNode MakeNodeFromResource(const MemoryAxiom& axiom, SymbolFactory& factory, const FlowGraph& graph) {
     FlowGraphNode result(graph, axiom.node->Decl(), plankton::IsLocal(axiom), axiom.flow->Decl(), factory);
-    
+
     auto& flowType = axiom.flow->GetType();
     result.dataFields.reserve(axiom.fieldToValue.size());
     result.pointerFields.reserve(axiom.fieldToValue.size());
@@ -64,7 +64,7 @@ inline FlowGraphNode MakeNodeFromResource(const MemoryAxiom& axiom, SymbolFactor
             result.dataFields.emplace_back(name, value->GetType(), value->Decl());
         }
     }
-    
+
     return result;
 }
 
@@ -75,7 +75,7 @@ inline std::unique_ptr<StackAxiom> MakeEquality(const SymbolDeclaration& lhs, st
 struct UpdateHelper {
     const SymbolDeclaration &trueValue, &falseValue, &minValue, &maxValue, &nullValue;
     SeparatingConjunction valuation;
-    
+
     explicit UpdateHelper(SymbolFactory& factory)
             : trueValue(factory.GetFreshFO(Type::Bool())), falseValue(factory.GetFreshFO(Type::Bool())),
               minValue(factory.GetFreshFO(Type::Data())), maxValue(factory.GetFreshFO(Type::Data())),
@@ -115,12 +115,13 @@ struct FlowGraphGenerator {
     Encoding encoding;
     UpdateHelper helper;
     UpdateMap updates;
-    
+    std::map<std::pair<const Type*, std::string>, bool> emptyOutflow;
+
     explicit FlowGraphGenerator(FlowGraph& empty, const MemoryWrite& command)
             : command(command), graph(empty), state(*empty.pre->now), factory(*graph.pre), helper(factory) {
         assert(command.lhs.size() == command.rhs.size());
     }
-    
+
     void MakeUpdates() {
         updates.Reset();
         state.Conjoin(plankton::Copy(helper.valuation));
@@ -132,7 +133,16 @@ struct FlowGraphGenerator {
             updates.Add(address, dereference.fieldName, value);
         }
     }
-    
+
+    inline bool HasEmptyOutflow(const Type& type, const std::string& field) {
+        // return plankton::IsOutflowFalse(type, field, graph.config);
+        auto find = emptyOutflow.find({ &type, field });
+        if (find != emptyOutflow.end()) return find->second;
+        auto isEmpty = plankton::IsOutflowFalse(type, field, graph.config);
+        emptyOutflow[{ &type, field }] = isEmpty;
+        return isEmpty;
+    }
+
     inline bool IsDistinct(const SymbolDeclaration& address) {
         std::vector<EExpr> vector;
         vector.reserve(graph.nodes.size());
@@ -140,7 +150,7 @@ struct FlowGraphGenerator {
         for (const auto& node : graph.nodes) vector.push_back(encoding.Encode(node.address) != expr);
         return encoding.Implies(encoding.MakeAnd(vector));
     }
-    
+
     inline void ApplyUpdates(FlowGraphNode& node) const {
         std::set<std::string> updatedFields;
         auto checkUpdate = [&updatedFields](const std::string& field) {
@@ -155,7 +165,7 @@ struct FlowGraphGenerator {
             field.postValue = *newValue;
         }
     }
-    
+
     FlowGraphNode* TryGetOrCreateNode(const SymbolDeclaration& nextAddress) {
         // find the memory resource referenced by nextAddress, abort if none exists
         auto* resource = plankton::TryGetResource(nextAddress, state);
@@ -185,7 +195,7 @@ struct FlowGraphGenerator {
             field.postValue = getPointerValue(field.postValue);
         }
     };
-    
+
     inline std::size_t GetExpansionDepth(const FlowGraphNode& node, std::size_t remainingDepth) {
         auto handle = [this,&remainingDepth,&node](auto& field){
             // if (!field.HasUpdated()) return;
@@ -196,7 +206,7 @@ struct FlowGraphGenerator {
         for (const auto& field : node.pointerFields) handle(field);
         return remainingDepth;
     }
-    
+
     std::set<const SymbolDeclaration*> ExpandGraph(std::size_t initialDepth) {
         Worklist cycleBreaker;
         Worklist worklist(initialDepth, graph.nodes.front());
@@ -212,7 +222,7 @@ struct FlowGraphGenerator {
 
             bool publish = !node->postLocal;
             for (auto& field : node->pointerFields) {
-                // if (plankton::IsOutflowFalse(node->address.type, field.name, graph.config)) continue;
+                if (HasEmptyOutflow(node->address.type, field.name)) continue;
                 for (auto mode : AllEMode) {
                     auto& nextAddress = field.Value(mode);
                     if (auto nextNode = TryGetOrCreateNode(nextAddress)) {
@@ -254,7 +264,7 @@ struct FlowGraphGenerator {
             case SolverConfig::NONE: throw std::logic_error("Unsupported Acyclicity: 'none'.");
         }
     }
-    
+
     inline FlowGraphNode& MakeRoot(const VariableDeclaration& root) {
         auto& rootAddress = plankton::GetResource(root, state).Value();
         FlowGraphNode* rootNode = TryGetOrCreateNode(rootAddress);
@@ -265,7 +275,7 @@ struct FlowGraphGenerator {
         rootNode->postAllInflow = rootNode->preAllInflow;
         return *rootNode;
     }
-    
+
     inline void DeriveFrontierKnowledge(const std::set<const SymbolDeclaration*>& frontier) {
         // get new memory
         auto& flowType = graph.config.GetFlowValueType();
@@ -285,11 +295,11 @@ struct FlowGraphGenerator {
         assert(&state == graph.pre->now.get());
         plankton::InlineAndSimplify(*graph.pre);
     }
-    
+
     void Construct(const VariableDeclaration& root, std::size_t depth) {
         // plankton::ExtendStack(*graph.pre, encoding, ExtensionPolicy::POINTERS);
         plankton::InlineAndSimplify(*graph.pre);
-        
+
         std::set<const SymbolDeclaration*> frontier;
         while (true) {
             MakeUpdates();
@@ -321,11 +331,11 @@ FlowGraph plankton::MakeFlowFootprint(std::unique_ptr<Annotation> pre, const Mem
     auto& lhs = *command.lhs.front();
     auto& root = lhs.variable->Decl();
     auto depth = config.GetMaxFootprintDepth(lhs.variable->GetType(), lhs.fieldName);
-    
+
     FlowGraph graph(std::move(pre), config);
     FlowGraphGenerator generator(graph, command);
     generator.Construct(root, depth);
-    
+
     // ensure that all updates are covered by the footprint
     // Note: this guarantees that FlowGraphGenerator.updates are non-overlapping since graph.nodes are non-overlapping
     for (const auto& dereference : command.lhs) {
@@ -333,7 +343,7 @@ FlowGraph plankton::MakeFlowFootprint(std::unique_ptr<Annotation> pre, const Mem
         if (target) continue;
         throw std::logic_error("Footprint construction failed: update to '" + plankton::ToString(*dereference) + "' not covered."); // TODO: better error handling
     }
-    
+
     // DEBUG("Footprint: " << std::endl)
     // for (const auto& node : graph.nodes) {
     //     DEBUG("   - Node " << node.address.name << std::endl)
@@ -349,7 +359,7 @@ FlowGraph plankton::MakeFlowFootprint(std::unique_ptr<Annotation> pre, const Mem
     // DEBUG("  with annotation: " << *graph.pre << std::endl)
     // PrintFootprint(graph);
     // DEBUG("flow graph construction successful." << std::endl)
-    
+
     return graph;
 }
 

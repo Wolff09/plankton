@@ -177,7 +177,7 @@ void ProofGenerator::HandleInterfaceFunction(const Function& function) {
         for (auto&[annotation, command]: returning) {
             assert(command);
             if (IsFulfilled(*annotation, *command)) continue;
-            annotation = solver.ImprovePast(std::move(annotation));
+            annotation = solver.ImprovePast(std::move(annotation), setup.improvePastIncreasedPrecisionForLinearizability);
             annotation = solver.TryAddFulfillment(std::move(annotation));
             if (IsFulfilled(*annotation, *command)) continue;
             annotation = solver.TryAddFulfillment(std::move(annotation)); // retry in case Z3 is funny

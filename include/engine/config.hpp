@@ -62,6 +62,13 @@ namespace plankton {
         GetSharedNodePairInvariant(const SharedMemoryCore& memory, const SharedMemoryCore& other) const = 0;
 
         /**
+         * May return 'false' if there is no invariant relating pairs of nodes, i.e., if there are
+         * no two nodes 'n1' and 'n2' for which 'GetSharedNodePairInvariant(n1, n2)' returns an
+         * object that is not equivalent to 'true'.
+         */
+        [[nodiscard]] virtual bool HasSharedNodePairInvariant() const { return true; };
+
+        /**
          * An invariant 'I(variable)' for the given shared variable.
          * @param variable The variable that the invariant should be instantiated for.
          * @return Instantiated invariant.
@@ -86,8 +93,13 @@ namespace plankton {
          * @return Instantiated predicate.
          */
         [[nodiscard]] virtual std::unique_ptr<ImplicationSet>
-        GetOutflowContains(const MemoryAxiom& memory, const std::string& fieldName,
-                           const SymbolDeclaration& value) const = 0;
+        GetOutflowContains(const MemoryAxiom& memory, const std::string& fieldName, const SymbolDeclaration& value) const = 0;
+
+        /**
+         * May return 'false' if there is no outflow via 'fieldName' pointers for the given type, i.e., if there is
+         * no node 'n' of the given type for which 'GetOutflowContains' returns an object that is not equivalent to 'true'.
+         */
+        [[nodiscard]] virtual bool HasOutflow(const Type& /*type*/, const std::string& /*fieldName*/) const { return true; };
         
         /**
          * A predicate 'P(node, key)' computing whether or not 'node' logically contains 'key'.

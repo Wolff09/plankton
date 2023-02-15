@@ -9,8 +9,6 @@
 
 using namespace plankton;
 
-constexpr const bool INTERPOLATE_POINTERS_ONLY = true;
-
 
 inline Encoding MakeEncoding(const Annotation& annotation, const SolverConfig& config) {
     Encoding encoding(*annotation.now, config);
@@ -72,7 +70,7 @@ inline std::unique_ptr<StackAxiom> MakeEq(const SymbolDeclaration& decl, const S
 
 //inline std::optional<EExpr>
 inline std::unique_ptr<SeparatingConjunction>
-MakeSubsumptionCheck(Encoding& encoding, const Formula& formula, const MemoryAxiom& weaker, const MemoryAxiom& stronger) {
+MakeSubsumptionCheck(Encoding& /*encoding*/, const Formula& formula, const MemoryAxiom& weaker, const MemoryAxiom& stronger) {
     //// TODO: why does it not work as intended??
     //if (&stronger == &weaker) return std::nullopt;
     //if (weaker.node->Decl() != stronger.node->Decl()) return std::nullopt;
@@ -229,9 +227,9 @@ struct Interpolator {
         for (auto& elem : annotation.past) ApplyImmutability(*elem->formula, annotation.now.get());
     }
 
-    void Interpolate() {
+    void Interpolate(bool increasePrecision) {
         Filter();
-        ExpandHistoryMemory();
+        ExpandHistoryMemory(increasePrecision);
         // DEBUG(" && after first expansion: " << annotation << std::endl)
         Filter();
         // DEBUG(" && after first filter: " << annotation << std::endl)
@@ -280,13 +278,14 @@ struct Interpolator {
         return result;
     }
 
-    [[nodiscard]] inline std::set<const SymbolDeclaration*> GetPointerFields(const SharedMemoryCore& memory) const {
-        return plankton::Collect<SymbolDeclaration>(memory, [](auto& obj){
-            return obj.type.sort == Sort::PTR;
+    [[nodiscard]] inline std::set<const SymbolDeclaration*> GetPointerFields(const SharedMemoryCore& memory, bool increasePrecision) const {
+        return plankton::Collect<SymbolDeclaration>(memory, [this,increasePrecision](auto& obj){
+            if (increasePrecision) return obj.type.sort == Sort::PTR;
+            else return obj.type.sort == Sort::PTR && plankton::TryGetResource(obj, *annotation.now);
         });
     }
 
-    void ExpandHistoryMemory() {
+    void ExpandHistoryMemory(bool increasePrecision) {
         MEASURE("Solver::ImprovePast ~> ExpandHistoryMemory")
 
         auto& flowType = config.GetFlowValueType();
@@ -294,8 +293,8 @@ struct Interpolator {
         annotation.past.clear();
 
         auto referenced = GetActiveReferences(annotation);
-        auto getExpansion = [this,&referenced](const auto& past) {
-            auto ptrFields = GetPointerFields(*past.formula);
+        auto getExpansion = [this,&referenced,increasePrecision](const auto& past) {
+            auto ptrFields = GetPointerFields(*past.formula, increasePrecision);
             for (auto it = ptrFields.begin(); it != ptrFields.end();) {
                 if (plankton::Membership(referenced, *it)) ++it;
                 else it = ptrFields.erase(it);
@@ -314,7 +313,9 @@ struct Interpolator {
 
             Encoding encoding = MakeEncoding(*past, config);
             plankton::MakeMemoryAccessible(*past->now, expansion, flowType, factory, encoding);
-            encoding = MakeEncoding(*past, config); // add the invariants for the newly accessible memory
+            if (increasePrecision) {
+                encoding = MakeEncoding(*past, config); // add the invariants for the newly accessible memory
+            }
 
             std::deque<std::unique_ptr<Axiom>> candidates;
             for (auto memory : plankton::CollectMutable<SharedMemoryCore>(*past->now)) {
@@ -520,11 +521,11 @@ struct Interpolator {
 
 };
 
-std::unique_ptr<Annotation> Solver::ImprovePast(std::unique_ptr<Annotation> annotation) const {
+std::unique_ptr<Annotation> Solver::ImprovePast(std::unique_ptr<Annotation> annotation, bool increasePrecision) const {
     MEASURE("Solver::ImprovePast")
     if (annotation->past.empty()) return annotation;
     DEBUG("<<IMPROVE PAST>>" << std::endl)
-    Interpolator(*annotation, interference, config).Interpolate();
+    Interpolator(*annotation, interference, config).Interpolate(increasePrecision);
     //DEBUG(*annotation << std::endl << std::endl)
     return annotation;
 }

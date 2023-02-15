@@ -3,6 +3,7 @@
 #include "PlanktonBaseVisitor.h"
 #include "logics/util.hpp"
 #include "util/log.hpp"
+#include "engine/encoding.hpp"
 
 using namespace plankton;
 
@@ -46,6 +47,18 @@ inline const Type& GetValueType(const AstBuilder& builder, PlanktonParser::TypeC
     auto& type = GetType(builder, context);
     if (type == Type::Data()) return type;
     throw std::logic_error("Parse error: expected 'data_t' in flow definition."); // TODO: better error handling
+}
+
+template<bool VAL>
+[[nodiscard]] inline inline std::unique_ptr<ImplicationSet> MkBool() {
+    auto result = std::make_unique<ImplicationSet>();
+    if constexpr (!VAL) {
+        auto imp = std::make_unique<NonSeparatingImplication>();
+        imp->conclusion->Conjoin(std::make_unique<StackAxiom>(
+                BinaryOperator::EQ, std::make_unique<SymbolicBool>(true), std::make_unique<SymbolicBool>(false)));
+        result->conjuncts.push_back(std::move(imp));
+    }
+    return result;
 }
 
 //
@@ -394,34 +407,43 @@ struct ParsedSolverConfigImpl : public ParsedSolverConfig {
     
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetSharedNodeInvariant(const SharedMemoryCore& memory) const override {
         auto store = FindStore(sharedInv, &memory.node->GetType());
-        if (!store) return std::make_unique<ImplicationSet>();
+        if (!store) return MkBool<true>();
         return Instantiate<true, false>(*store, &memory, nullptr);
     }
 
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetSharedNodePairInvariant(const SharedMemoryCore& memory, const SharedMemoryCore& other) const override {
         auto key = std::make_pair(&memory.node->GetType(), &other.node->GetType());
         auto store = FindStore(pairwiseInv, key);
-        if (!store) return std::make_unique<ImplicationSet>();
+        if (!store) return MkBool<true>();
         return Instantiate(*store, memory, other);
+    }
+
+    [[nodiscard]] bool HasSharedNodePairInvariant() const override {
+        return !pairwiseInv.empty();
     }
     
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetLocalNodeInvariant(const LocalMemoryResource& memory) const override {
         auto store = FindStore(localInv, &memory.node->GetType());
-        if (!store) return std::make_unique<ImplicationSet>();
+        if (!store) return MkBool<true>();
         return Instantiate<true, false>(*store, &memory, nullptr);
     }
     
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetSharedVariableInvariant(const EqualsToAxiom& variable) const override {
         auto store = FindStore(variableInv, &variable.Variable());
-        if (!store) return std::make_unique<ImplicationSet>();
+        if (!store) return MkBool<true>();
         return Instantiate<false, true>(*store, nullptr, &variable.Value());
     }
     
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetOutflowContains(const MemoryAxiom& memory, const std::string& fieldName,
                                                                      const SymbolDeclaration& value) const override {
         auto store = FindStore(outflowPred, std::make_pair(&memory.node->GetType(), fieldName));
-        if (!store) throw std::logic_error("Internal error: cannot find outflow predicate");
+        if (!store) return MkBool<false>();
         return Instantiate<true, true>(*store, &memory, &value);
+    }
+
+    [[nodiscard]] bool HasOutflow(const Type& type, const std::string& fieldName) const override {
+        auto store = FindStore(outflowPred, std::make_pair(&type, fieldName));
+        return store != nullptr;
     }
     
     [[nodiscard]] std::unique_ptr<ImplicationSet> GetLogicallyContains(const MemoryAxiom& memory,
@@ -431,6 +453,20 @@ struct ParsedSolverConfigImpl : public ParsedSolverConfig {
         return Instantiate<true, true>(*store, &memory, &value);
     }
 };
+
+inline bool IsFalse(const FlowStore& predicate) {
+    Encoding encoding;
+    encoding.AddPremise(encoding.Encode(*predicate.invariant));
+    return encoding.ImpliesFalse();
+}
+
+template<typename T>
+inline void PruneFalse(T& container) {
+    for (auto it = container.begin(); it != container.end();) {
+        if (IsFalse(it->second)) { it = container.erase(it); }
+        else ++it;
+    }
+}
 
 std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::ProgramContext& context) {
     if (NoConfig(context)) return nullptr;
@@ -464,6 +500,7 @@ std::unique_ptr<ParsedSolverConfig> AstBuilder::MakeConfig(PlanktonParser::Progr
         if (insertion.second) continue;
         throw std::logic_error("Parse error: duplicate outflow definition for field '" + field + "' of type '" + type.name + "'."); // TODO: better error handling
     }
+    PruneFalse(result->outflowPred);
     
     for (auto* invariantContext : context.ninv) {
         assert(invariantContext->isShared != nullptr ^ invariantContext->isLocal != nullptr);

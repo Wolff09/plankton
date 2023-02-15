@@ -61,7 +61,7 @@ namespace plankton {
         [[nodiscard]] bool IsUnsatisfiable(const Annotation& annotation) const;
         [[nodiscard]] bool Implies(const Annotation& premise, const Annotation& conclusion) const;
 
-        [[nodiscard]] std::unique_ptr<Annotation> ImprovePast(std::unique_ptr<Annotation> annotation) const; // TODO: past suggestions
+        [[nodiscard]] std::unique_ptr<Annotation> ImprovePast(std::unique_ptr<Annotation> annotation, bool increasePrecision=false) const; // TODO: past suggestions
         [[nodiscard]] PostImage ImproveFuture(std::unique_ptr<Annotation> annotation, const FutureSuggestion& target) const;
         [[nodiscard]] std::unique_ptr<Annotation> ReducePast(std::unique_ptr<Annotation> annotation) const;
         [[nodiscard]] std::unique_ptr<Annotation> ReduceFuture(std::unique_ptr<Annotation> annotation) const;
