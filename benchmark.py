@@ -14,19 +14,31 @@ import sys
 TIMEOUT = 60 * 60 * 6  # in seconds
 REPETITIONS = 1
 
-EXECUTABLE = "./plankton"
-BENCHMARKS = {  # path: [flags]
-    "examples/FineSet.pl": [],
-    "examples/LazySet.pl": [],
-    "examples/VechevYahavDCas.pl": [],
-    "examples/VechevYahavCas.pl": [],
-    "examples/ORVYY.pl": [],
-    "examples/Michael.pl": [],
-    "examples/MichaelWaitFreeSearch.pl": [],
-    "examples/Harris.pl": [],
-    "examples/HarrisWaitFreeSearch.pl": [],
-    "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
-    "examples/LO_abstract.pl": [],
+EXECUTABLE = "build/bin/plankton"
+BENCHMARKS = {  # name: (path, [flags])
+    "old FineSet.pl": ("examples/FineSet.pl", []),
+    "old LazySet.pl": ("examples/LazySet.pl", []),
+    "old VechevYahavDCas.pl": ("examples/VechevYahavDCas.pl", []),
+    "old VechevYahavCas.pl": ("examples/VechevYahavCas.pl", []),
+    "old ORVYY.pl": ("examples/ORVYY.pl", []),
+    "old Michael.pl": ("examples/Michael.pl", []),
+    "old MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", []),
+    "old Harris.pl": ("examples/Harris.pl", []),
+    "old HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", []),
+    "old FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin"]),
+    "old LO_abstract.pl": ("examples/LO_abstract.pl", [""]),
+    # compare impact of --pastPrecision
+    "new FineSet.pl": ("examples/FineSet.pl", ["--pastPrecision"]),
+    "new LazySet.pl": ("examples/LazySet.pl", ["--pastPrecision"]),
+    "new VechevYahavDCas.pl": ("examples/VechevYahavDCas.pl", ["--pastPrecision"]),
+    "new VechevYahavCas.pl": ("examples/VechevYahavCas.pl", ["--pastPrecision"]),
+    "new ORVYY.pl": ("examples/ORVYY.pl", ["--pastPrecision"]),
+    "new Michael.pl": ("examples/Michael.pl", ["--pastPrecision"]),
+    "new MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", ["--pastPrecision"]),
+    "new Harris.pl": ("examples/Harris.pl", ["--pastPrecision"]),
+    "new HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", ["--pastPrecision"]),
+    "new FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin", "--pastPrecision"]),
+    "new LO_abstract.pl": ("examples/LO_abstract.pl", ["--pastPrecision"]),
 }
 
 #
@@ -122,8 +134,11 @@ def extract_info(output):
     return Result(total, iters, eff, can, com, fut, hist, join, inter)
 
 
-def run_with_timeout(path):
-    all_args = [EXECUTABLE, "-g", path] + BENCHMARKS.get(path, [])
+def run_with_timeout(name):
+    if name not in BENCHMARKS:
+        raise NameError("Internal error: could not find bechmark with name '" + name + "'")
+    path, flags = BENCHMARKS.get(name)
+    all_args = [EXECUTABLE, path] + flags
 
     # make sure to properly kill subprocesses after timeout
     # see: https://stackoverflow.com/questions/36952245/subprocess-timeout-failure
@@ -138,10 +153,10 @@ def run_with_timeout(path):
     return output
 
 
-def run_test(path, i):
-    output = run_with_timeout(path)
+def run_test(name, i):
+    output = run_with_timeout(name)
     result = extract_info(output)
-    print("[{:0>2}/{:0>2}] {:>12}  for  {:<40}".format(i+1, REPETITIONS, result.info, path), flush=True)
+    print("[{:0>2}/{:0>2}] {:>12}  for  {:<40}".format(i+1, REPETITIONS, result.info, name), flush=True)
     return result
 
 
@@ -188,9 +203,9 @@ def main():
     print("Running benchmarks...")
     print()
     for i in range(REPETITIONS):
-        for path in BENCHMARKS:
-            result = run_test(path, i)
-            RESULTS[path] = RESULTS.get(path, []) + [result]
+        for name in BENCHMARKS:
+            result = run_test(name, i)
+            RESULTS[name] = RESULTS.get(name, []) + [result]
     finalize()
 
 

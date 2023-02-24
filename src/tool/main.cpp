@@ -16,7 +16,7 @@ using namespace plankton;
 struct CommandLineInput {
     std::string pathToInput;
     bool spuriousCasFail = false;
-    bool printGist = false;
+    // bool printGist = false;
     EngineSetup setup;
 };
 
@@ -40,7 +40,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     auto isFile = std::make_unique<IsRegularFileConstraint>("_to_input");
     
     TCLAP::SwitchArg casSwitch("", "no-spurious", "Deactivates Compare-and-Swap failing spuriously", cmd, false);
-    TCLAP::SwitchArg gistSwitch("g", "gist", "Print machine readable gist at the very end", cmd, false);
+    // TCLAP::SwitchArg gistSwitch("g", "gist", "Print machine readable gist at the very end", cmd, false);
     TCLAP::UnlabeledValueArg<std::string> programArg("input", "Input file with program code and flow definition", true, "", isFile.get(), cmd);
 
     TCLAP::SwitchArg loopWidenSwitch("", "loopWiden", "Computes fixed points for loops using a widening, rather than a join", cmd, false);
@@ -53,7 +53,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     cmd.parse(argc, argv);
     input.pathToInput = programArg.getValue();
     input.spuriousCasFail = !casSwitch.getValue();
-    input.printGist = gistSwitch.getValue();
+    // input.printGist = gistSwitch.getValue();
 
     input.setup.loopJoinUntilFixpoint = !loopWidenSwitch.getValue();
     input.setup.loopJoinPost = !loopNoPostJoinSwitch.getValue();
@@ -61,7 +61,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.setup.loopMaxIterations = loopMaxIterArg.getValue();
     input.setup.proofMaxIterations = proofMaxIterArg.getValue();
     input.setup.improvePastIncreasedPrecisionForLinearizability = false;
-    input.setup.improvePastIncreasedPrecisionForStability = false;
+    input.setup.improvePastIncreasedPrecisionForStability = pastMorePrecise.getValue();
     input.setup.improvePastIncreasedPrecisionForAnnotations = pastMorePrecise.getValue();
 
     return input;
@@ -117,7 +117,7 @@ inline void PrintResult(const CommandLineInput& cmd, const ParsingResult& input,
     INFO("#   time taken (ms): " << result.timeTaken.count() << std::endl)
     INFO("#" << std::endl << std::endl)
     
-    if (!cmd.printGist) return;
+    // if (!cmd.printGist) return;
     INFO("@gist[" << cmd.pathToInput << "]=")
     INFO("" << (result.linearizable ? "1" : "0"))
     INFO("," << result.timeTaken.count() << ";")
