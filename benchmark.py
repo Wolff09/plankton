@@ -25,9 +25,9 @@ BENCHMARKS = {  # name: (path, [flags])
     "old MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", []),
     "old Harris.pl": ("examples/Harris.pl", []),
     "old HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", []),
-    "old FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin"]),
-    "old LO_abstract.pl": ("examples/LO_abstract.pl", [""]),
-    # compare impact of --pastPrecision
+    # "old FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin"]),
+    # "old LO_abstract.pl": ("examples/LO_abstract.pl", [""]),
+    ## compare impact of --pastPrecision
     "new FineSet.pl": ("examples/FineSet.pl", ["--pastPrecision"]),
     "new LazySet.pl": ("examples/LazySet.pl", ["--pastPrecision"]),
     "new VechevYahavDCas.pl": ("examples/VechevYahavDCas.pl", ["--pastPrecision"]),
@@ -37,8 +37,8 @@ BENCHMARKS = {  # name: (path, [flags])
     "new MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", ["--pastPrecision"]),
     "new Harris.pl": ("examples/Harris.pl", ["--pastPrecision"]),
     "new HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", ["--pastPrecision"]),
-    "new FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin", "--pastPrecision"]),
-    "new LO_abstract.pl": ("examples/LO_abstract.pl", ["--pastPrecision"]),
+    # "new FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin", "--pastPrecision"]),
+    # "new LO_abstract.pl": ("examples/LO_abstract.pl", ["--pastPrecision"]),
 }
 
 #
