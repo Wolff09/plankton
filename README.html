@@ -1,0 +1,1005 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+	
+	<!-- Font Awesome CSS -->
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+	
+	<!-- highlight.js -->
+	<!-- <link rel="stylesheet" href="highlight.default.css">
+	<script src="highlight.pack.js"></script>
+	<script>hljs.initHighlightingOnLoad();</script> -->
+	
+	<title>plankton</title>
+
+	<style type="text/css">
+		header {
+			padding: .75rem;
+		}
+		header .logos a {
+			display: inline-block;
+		}
+		header .logos a:hover {
+			opacity: .7;
+			transform: scale(1.05, 1.05);
+		}
+
+		div.mt-4 h1 {
+			border-bottom: 2px solid #e83e8c;
+			border-left: 20px /*solid #e83e8c;
+			padding-left: 5px;*/
+		}
+		div.mt-4 h1 span.index {
+			display: inline-block;
+			width: 1em;
+			text-align: center;
+			background-color: #e83e8c;
+			color: white;
+		}
+		div.mt-4 h3,h4 {
+			border-bottom: 1px dashed #e83e8c;
+		}
+
+		table.experiments .fas, table.experiments .far {
+			width: 1.25em;
+		}
+		table.experiments .fa-check, .experiments.fa-check {
+			color: #33DD33;
+		}
+		table.experiments .fa-times, .experiments.fa-times {
+			color: #DD3333;
+		}
+		table.experiments .fa-clock, .experiments.fa-clock {
+			color: #EACF33;
+		}
+
+		kbd {
+			text-transform: uppercase;
+			/*background-color: #820954;*/
+			background-color: #e83e8c;
+		}
+
+		.code-link {
+			color: #e83e8c;
+		}
+
+		.tooltip-inner {
+			/*max-width: 400px;*/
+			max-width: 25rem;
+		}
+		/*.tooltip-inner i {
+			font-weight: 600;
+		}*/
+		span.ref-full::before, span.ref-year::before, .ref-item-id::before {
+			content: "[";
+		}
+		span.ref-full::after, span.ref-year::after, .ref-item-id::after {
+			content: "]";
+		}
+		.ref-item {
+			margin-top: .35rem;
+		}
+		.ref-item-id, .ref-item-id::before, .ref-item-id::after {
+			font-weight: bold;
+		}
+		.ref-item-paper {
+			font-style: italic;
+		}
+	</style>
+</head>
+<body>
+	<br>
+	<div class="container clearfix">
+		<!-- ********************************************************************************** -->
+		<!-- ************************************** PAPER ************************************* -->
+		<!-- ********************************************************************************** -->
+		<div class="jumbotron">
+			<h1 style="font-size: 2.75rem;">
+				Embedding Hindsight Reasoning in Separation Logic
+			</h1>
+			<h3>
+				<small>
+					ANONYMOUS AUTHOR(S)
+				</small>
+			</h3>
+			<p class="lead text-justify mb-2">
+				<strong>Paper Abstract.</strong>
+				Automatically proving linearizability of concurrent data structures remains a key challenge for verification. We present temporal interpolation as a new proof principle to guide automated proof search using hindsight arguments within concurrent separation logic. Temporal interpolation offers an easy-to-automate alternative to prophecy variables and has the advantage of structuring proofs into easy-to-discharge hypotheses. Additionally, we advance hindsight theory by integrating it into a program logic, bringing formal rigor and complementary proof machinery. We substantiate the usefulness of temporal interpolation by implementing it in a tool and using it to automatically verify the Logical Ordering tree. The proof is challenging due to future-dependent linearization points and complex structure overlays. It is the first formal proof of this data structure. Interestingly, our formalization revealed an unknown bug and an existing informal proof as erroneous.
+			</p>
+			<p class="lead text-justify mb-2">
+				<strong>Artifact Abstract.</strong>
+				...
+			</p>
+		</div>
+		<br>
+
+
+		<!-- ********************************************************************************** -->
+		<!-- ********************************* GETTING STARTED ******************************** -->
+		<!-- ********************************************************************************** -->
+
+		<div class="mt-4">
+			<h1><span class="index">A</span> Getting Started</h1>
+			<p>
+				To get the artifact up and running, you may choose between an VM image, a docker image, or a docker build script at your own convenience.
+				Please note, however, that the prebuilt VM/docker images are compatible with <strong>x86</strong> hardware only.
+				Should you conduct the artifact evaluation on <strong>Apple Silicon</strong>, please use the docker build script.
+			</p>
+			<p>
+				For the sake of completeness, we also document how to build the artifact from source <a href="#deepdive">at the end</a>.
+			</p>
+
+			<p><b>TODO: structure of the artifact??????</b></p>
+
+			<!-- *********************************** VM IMAGE *********************************** -->
+			<h4>Option 1: VM image (x86)</h4>
+			<ol>
+				<li>
+					Install a virtual machine player, preferably <a href="https://www.virtualbox.org/">Virtual box</a>.
+				</li>
+				<li>
+					Download the virtual machine image <code>????</code> from the <a href="???">Zenodo repository</a>.
+				</li>
+				<li>
+					Import the downloaded VM image into the VM player and run it.
+					<br>
+					The username and password for the virtual machine are <code>pldi</code> and <code>123</code>, respectively.
+				</li>
+				<li>
+					Open a terminal an run the following commands:
+					<pre class="bg-light border"><code class="bash">
+  cd ~/artifact
+  ./plankton examples/check.pl
+					</code></pre>
+				</li>
+				<li>
+					If there are no errors, you are all set for the full evaluation!
+				</li>
+			</ol>
+
+			<!-- ********************************* DOCKEr IMAGE ********************************* -->
+			<h4>Option 2: Docker image (x86)</h4>
+			<ol>
+				<li>
+					Install <a href="https://www.docker.com/">Docker</a>.
+				</li>
+				<li>
+					Download the docker image <code>????</code> from the <a href="???">Zenodo repository</a>.
+				</li>
+				<li>
+					Import the docker image.
+					In a terminal, this can be done like so:
+					<pre class="bg-light border"><code class="bash">
+  ?????????????????
+					</code></pre>
+				</li>
+				<li>
+					Start the docker image: <code class="bash">??????</code>
+				</li>
+				<li>
+					Run: <code class="bash">./plankton examples/check.pl</code>
+				</li>
+				<li>
+					If there are no errors, you are all set for the full evaluation!
+				</li>
+			</ol>
+
+			<!-- ********************************* DOCKER SCRIPT ******************************** -->
+			<h4>Option 3: Docker build script (universal)</h4>
+			<ol>
+				<li>
+					Install <a href="https://www.docker.com/">Docker</a>.
+				</li>
+				<li>
+					Download source files <code>?????</code> from the <a href="???">Zenodo repository</a> and unzip, say to this location: <code>path/to/plankton-pldi</code>.
+				</li>
+				<li>
+					Create a docker instance for the artifact: <code class="bash">docker build . -t plankton</code>
+				</li>
+				<li>
+					Start the instance: <code class="bash">docker run -it plankton</code>
+				</li>
+				<li>
+					Run: <code class="bash">./plankton examples/check.pl</code>
+				</li>
+				<li>
+					If there are no errors, you are all set for the <a href="#eval">full evaluation</a>!
+				</li>
+			</ol>
+		</div>
+		<br>
+
+
+		<!-- ********************************************************************************** -->
+		<!-- ************************************* TOOLS ************************************** -->
+		<!-- ********************************************************************************** -->
+
+		<div class="mt-4">
+			<h1 id="eval"><span class="index">B</span> Step-by-Step Instructions</h1>
+			<p>
+				We show how to reproduce the experiments from the submitted version of our paper (<a href="#claim1">Claim 1</a>).
+				Moreover, we show hot how to produce additional experimental results (<a href="#claim2">Claim 2</a>) that we will add to the camera-ready version, as requested by the reviewers.
+			</p>
+
+			<!-- ************************************ LO TREE *********************************** -->
+			<h4 id="claim1">Claim 1: Verifying the LO-tree</h4>
+			<p>
+				<strong>Central claim:</strong>
+				our new version of <kbd>plankton</kbd> automatically verifies a version of the <i>LO-tree</i> <span class="ref-full">DrachslerVY14</span> where the maintenance operations are replaced by <i>most general stubs</i>.
+				The code of the implementation can be found in the file <code>examples/LO_abstract.pl</code>
+			</p>
+			<p>
+				To repeat the verification, run the following command:
+			</p>
+			<pre class="bg-light border"><code class="bash">
+  ./plankton examples/LO_abstract.pl --pastPrecision
+			</code></pre>
+			<p>
+				The flag <code class="bash">--pastPrecision</code> instructs <kbd>plankton</kbd> to use our novel temporal interpolation.
+				Without the flag, <kbd>plankton</kbd> performs its original analysis as devised by <span class="ref-full">MeyerWW22</span>; feel free to see <kbd>plankton</kbd> fail when omitting the flag.
+			</p>
+			<p>
+				Note that the verification of the LO-tree may take a while:
+				about 40m on an Apple M1 Pro or about 60m on an Intel i5-8600K.
+				<b>SAME AS IN PAPER?</b>
+				While <kbd>plankton</kbd> is running, it will output the current status.
+				You will see something like this:
+			</p>
+			<pre class="bg-light border">
+  [][][][] ?????????????????
+			</pre>
+			<p>
+				This output informs you of the current iteration of the overall fixed point that is being computed (here ???), which function (???) and which command in there (???) is currently being analyzed.
+				For loops, a (nested) fixed point is computed the iteration of which is reported, e.g.:
+			</p>
+			<pre class="bg-light border">
+  [][][][] ?????????????????
+			</pre>
+			<p>
+				Once finished, <kbd>plankton</kbd> will output the verdict and time taken, e.g.:
+			</p>
+			<pre class="bg-light border">
+  [][][][] ?????????????????
+			</pre>
+			<p>
+				Finally, note that running <code class="bash">./plankton examples/LO_abstract.pl</code> without the <code class="bash">--pastPrecision</code> flag will result in verification failure.
+			</p>
+
+			<!-- ********************************** COMPARISON ********************************** -->
+			<h4 id="claim2">Claim 2: Performance Comparison</h4>
+			<p>
+				<strong>Central claim</strong>:
+				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> without being much slow (factor 2-4 slower).
+			</p>
+			<p>The benchmark set of <span class="ref-full">MeyerWW22</span> consists of the following implementations:
+			</p>
+			<ul>
+				<li>
+					<i>Fine-grained set</i> <span class="ref-full">HerlihyS08</span>:
+					<br>
+					<code>examples/FineSet.pl</code>
+				</li>
+				<li>
+					<i>Lazy set</i> <span class="ref-full">HellerHLMSS05</span>:
+					<br>
+					<code>examples/LazySet.pl</code>
+				</li>
+				<li>
+					<i>FEMRS tree (no maintenance)</i> <span class="ref-full">FeldmanEMRS18</span>:
+					<br>
+					<code>examples/FemrsTreeNoMaintenance.pl</code>
+				</li>
+				<li>
+					<i>Vechev&Yahav's DCAS set</i> and <i>CAS set</i> <span class="ref-full">VechevY08</span>:
+					<br>
+					<code>examples/VechevYahavDCAS.pl</code> and <code>examples/VechevYahavCAS.pl</code>
+				</li>
+				<li>
+					<i>ORVYY's set</i> <span class="ref-full">OHearnRVYY10</span>:
+					<br>
+					<code>examples/ORVYY.pl</code>
+				</li>
+				<li>
+					<i>Michael's set</i> <span class="ref-full">Michael02a</span> and a variation:
+					<br>
+					<code>examples/Michael.pl</code> and <code>examples/MichaelWaitFreeSearch.pl</code>
+				</li>
+				<li>
+					<i>Harris' set</i> <span class="ref-full">Harris01</span> and a variation:
+					<br>
+					<code>examples/Harris.pl</code> and <code>examples/HarrisWaitFreeSearch.pl</code>
+				</li>
+			</ul>
+
+			<p>
+				To analyze the benchmark suite with both versions of <kbd>plankton</kbd>, run the following command:
+			</p>
+			<pre class="bg-light border"><code class="bash">
+  python3 benchmark.py
+			</code></pre>
+			<p>
+				You can specify the number of times each benchmark should be repeated to average the runtime: <code class="bash">python3 benchmark.py 5</code>, for instance, performs 5 repetitions.
+				By default, the script will execute every benchmark once.
+			</p>
+			<div class="alert alert-warning">
+				There is a known issue where the <code>benchmark.py</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				The issue is due to Z3 spontaneously misbehaving when used with Python's <code>subprocess</code> library (or pipes in general).
+			</div>
+			<p>
+				After all benchmarks are run, the expected output on an Apply M1 is the following table:
+			</p>
+			<pre class="bg-light border">
+  [][][][] ?????????????????
+			</pre>
+			<p>
+				For comparison, the expected output on an Intel i5-8600K is this:
+			</p>
+			<pre class="bg-light border">
+  [][][][] ?????????????????
+			</pre>
+			<p>
+				Here, we are concerned only with the last column of the table, which is the verification verdict and the overall time it took.
+				The meaning of the remaining columns is as follows <span class="ref-full">MeyerWW22</span>:
+				<ul>
+					<li><i>Program: </i>the name of the example program,</li>
+					<li><i>Iter:</i> number of iterations until interferences (effects) are saturated,</li>
+					<li><i>Eff:</i> number of interference effects,</li>
+					<li><i>Cand:</i> number of future candidates,</li>
+					<li><i>Com:</i> percentage of overall runtime spent for handling atomic commands,</li>
+					<li><i>Fut:</i> percentage of overall runtime spent for future reasoning,</li>
+					<li><i>Hist:</i> percentage of overall runtime spent for history reasoning,</li>
+					<li><i>Join:</i> percentage of overall runtime spent for the join operation,</li>
+					<li><i>Inter:</i> percentage of overall runtime spent for applying interferences, and</li>
+					<li><i>Linearizability:</i> linearizability verdict and time in seconds to generate it (i.e. a proof thereof).</li>
+				</ul>
+			</p>
+
+			<p>
+				<i>This concludes artifact evaluation.</i>
+			</p>
+		</div>
+		<br>
+
+
+		<!-- ********************************************************************************** -->
+		<!-- ************************************* INSTALL ************************************ -->
+		<!-- ********************************************************************************** -->
+
+		<div class="mt-4">
+			<h1 id="deepdive"><span class="index">C</span> Deep Dive</h1>
+			<p>
+				<strong>The following is not part of artifact evaluation.</strong>
+				We provide additional information for the invested reader.
+			</p>
+
+			<!-- ******************************* BUILD FROM SOURCE ****************************** -->
+			<h3>Option 4: Build from Source (universal)</h3>
+			<p>
+				To compile this project you need <strong>CMake</strong> (>3.21), <strong>CLAN</strong> (>12.0), <strong>Java JRE</strong> (>1.6), and <strong>Z3</strong> (<a target="new" href="https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7">v4.8.7</a>).
+				Compilation with <strong>GCC</strong> and <strong>G++</strong> (>10.0) is also possible, but the following guide focuses on <strong>CLANG</strong>.
+				To run the benchmarking script, you need <strong>Pyton 3</strong> (>3.5).
+			</p>
+
+			<h5>Z3 Version</h5>
+			<p>
+				For reproducing the results, it is paramount to use the correct Z3 version: <a target="new" href="https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7">v4.8.7</a>.
+				Versions >4.8.7 generally fail to run <a href="https://z3prover.github.io/api/html/classz3_1_1solver.html#a4322874cf842109514596806684cd4d7"><code>z3::solver::consequences()</code></a> for the combination of theories required (integers + quantifiers + free functions).
+				If <a href="https://z3prover.github.io/api/html/classz3_1_1solver.html#a4322874cf842109514596806684cd4d7"><code>z3::solver::consequences()</code></a> fails, <kbd>plankton</kbd> issues a warning and uses a backup procedure relying on potentially many individual calls to <a href="https://z3prover.github.io/api/html/classz3_1_1solver.html#a65d4e25fe55aa280fa800b9611cd8c04"><code>z3::solver::check()</code></a>.
+				The backup procedure tremendously decreases performance, hence increases the runtime.
+			</p>
+
+			<p>
+				We recommend to compile Z3 with the same compiler as you compile <kbd>plankton</kbd> with.
+			</p>
+
+			<h5>Compilation</h5>
+			<p>
+				To build the project, download the source code <code>????.zip</code> from the <a href="???">Zenodo repository</a>.
+				Then, do the following
+			</p>
+			<pre class="bg-light border"><code class="bash">
+  cd path/to/plankton-pldi.zip
+  unzip plankton-pldi.zip  # alternatively: tar -xvf plankton-pldi.zip
+  mkdir build
+  cd build
+  CXX=/path/to/CXX-compiler cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation
+  CXX=/path/to/CXX-compiler make
+  make install
+			</code></pre>
+			<p>
+				This creates a folder <code>/path/to/installation/plankton</code> at the specified location.
+				This folder contains all binaries, scripts, and examples needed to reproduce the evaluation from the paper.
+			</p>
+			<p>
+				We recommend to use the <code>-DCMAKE_INSTALL_PREFIX</code> to specify a location where to install the tool.
+				Omitting this flag will install the tool somewhere like <code>/usr/local/</code>.
+				You can customize the folder that is appended to <code>/path/to/installation</code> by setting <code>-DINSTALL_FOLDER</code> appropriately in the cmake invocation.
+			</p>
+			<p>
+				You can omit the <code>-DCMAKE_CXX_COMPILER</code> option to use your system's default compiler.
+			</p>
+
+			<h5>Troubleshooting</h5>
+			<p>
+				There are some known issues you might run into.
+			</p>
+			<dl>
+				<dt>Issue: missing external dependencies</dt>
+				<dd>
+					The project includes the code for <code>AntLR</code>, however, your system might miss some dependencies for it to build successfully.
+					On Linux (tested with Ubuntu >18.04), make sure you have <code>uuid</code>, <code>uuid-dev</code>, and <code>pkg-config</code> installed.
+				</dd>
+
+				<dt>Issue: timeout while cloning from GitHub</dt>
+				<dd>
+					In some versions, the build process of <code>AntLR</code> fetches the library <code>utfcpp</code> from GitHub.
+					In some (mainly academic) network setups this may fail and time out.
+					The problem can be solved by forcing <code>git</code> to use <code>https</code> like so:
+			<pre class="bg-light border"><code class="bash">
+  git config --global url."https://".insteadOf git://
+			</code></pre>
+				</dd>
+
+				<dt>Issue: <code>clang</code> and <code>libc++</code></dt>
+				<dd>
+					When building with <code>clang</code>, you might run into problems compiling and linking <code>AntLR</code>.
+					To solve this (tested with Ubuntu >18.04), install <code>libc++-dev</code> and <code>libc++abi-dev</code>.
+					Then, create a compiler wrapper <code>stdclang</code> like so
+			<pre class="bg-light border"><code class="bash">
+  sudo touch /usr/bin/stdclang
+  sudo chmod a+x /usr/bin/stdclang
+			</code></pre>
+					Edit the created file <code>/usr/bin/stdclang</code> to contain this:
+			<pre class="bg-light border"><code class="bash">
+  #!/bin/bash
+  clang++ -stdlib=libc++ $@
+			</code></pre>
+					With this, use <code>stdclang</code> as the <code>CXX</code> compiler in the above build commands; it properly sets up <code>clang++</code> to use <code>libc++</code>.
+				</dd>
+			</dl>
+
+		<!-- ********************************************************************************** -->
+		<!-- ************************************ PLANKTON ************************************ -->
+		<!-- ********************************************************************************** -->
+
+		<div class="mt-4">
+			<h1>The <kbd>plankton</kbd> Tool</h1>
+			<p>
+				Instead of using the benchmark script, you can directly interact with <kbd>plankton</kbd>.
+			</p>
+
+			<h4>Basic Usage</h4>
+			<p>
+				You invoke <kbd>plankton</kbd> like so:
+			</p>
+			<pre class="bg-light border"><code class="">
+        ./plankton  [-g] [--no-spurious]  &lt;path_to_program&gt;
+			</code></pre>
+			<p>
+				The flags and their arguments are listed in the following table (excerpt).
+			</p>
+			<table class="table border">
+				<thead>
+					<tr>
+						<th scope="col">Flag / Argument</th>
+						<th class="text-center" scope="col">Optional</th>
+						<th class="text-center" scope="col">Default</th>
+						<th scope="col">Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td class="text-nowrap"><code> &lt;path_to_program&gt; </code></td>
+						<td class="text-center">no</td>
+						<td class="text-center">&mdash;</td>
+						<td>
+							Input program file to analyze.
+							For examples, <i class="fas fa-link text-secondary"></i> <a class="text-secondary" href="#benchmarks-programs" class="">See Benchmark Programs</a>
+						</td>
+					</tr>
+					<tr>
+						<td class="text-nowrap"><code> --gist <br> -g </code></td>
+						<td class="text-center">yes</td>
+						<td class="text-center"><code>false</code></td>
+						<td>Outputs a machine readable (read: easy to parse) string at the end of execution, informing about the overall runtime and linearizability verdict.</td>
+					</tr>
+					<tr>
+						<td class="text-nowrap"><code> --no-spurious</code></td>
+						<td class="text-center">yes</td>
+						<td class="text-center"><code>false</code></td>
+						<td>Instructs the internal rewrite engine to prevent desugared <code>CAS</code> commands  to fail spuriously.
+							Note that the C++ standard explicitly allows <code>CAS</code> to fail spuriously.
+						</td>
+					</tr>
+					<tr>
+						<td class="text-nowrap"><code> --loopNoPostJoin</code></td>
+						<td class="text-center">yes</td>
+						<td class="text-center"><code>false</code></td>
+						<td>Instructs proof construction to perform a <i>join</i> over the postannotations of loops. This increases the precision of proof.
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<p>
+				Besides the above, <code>--version</code> prints the tool's version, <code>-h</code> and <code>--help</code> print the full usage description.
+			</p>
+			<p>
+				Note that <code>--loopNoPostJoin</code> flag is required in order for the FEMRS tree to be verified successfully.
+				The remaining benchmarks do not require the increased precision.
+				The <code>benchmark.py</code> script passes this flag automatically.
+			</p>
+
+			<h4>Input Programs</h4>
+			<p>
+				<kbd>plankton</kbd> supports a simple C-style input language.
+				Below you find an example program that showcases the required components and the most common constructs.
+				(Note that the below example may not be linearizable.)
+				For a list of all supported constructs, refer to the <a target="new" href="https://www.antlr.org/">ANTLR</a> parser definition <span class="text-nowrap"><i class="fas fa-link text-secondary">&nbsp;</i><a class="text-secondary" target="new" href="https://github.com/Wolff09/plankton/releases/tag/PLDI22/src/parser/Plankton.g4">here</a></span>.
+			</p>
+			<nav>
+				<div class="nav nav-tabs" id="nav-tab" role="tablist">
+					<a class="nav-item nav-link active" id="nav-Example1-tab" data-toggle="tab" href="#nav-Example1" role="tab" aria-controls="nav-Example1" aria-selected="true">Initialization</a>
+					<a class="nav-item nav-link" id="nav-Example2-tab" data-toggle="tab" href="#nav-Example2" role="tab" aria-controls="nav-Example2" aria-selected="true">Flow&amp;Node invariants</a>
+					<a class="nav-item nav-link" id="nav-Example3-tab" data-toggle="tab" href="#nav-Example3" role="tab" aria-controls="nav-Example3" aria-selected="true">Helpers</a>
+					<a class="nav-item nav-link" id="nav-Example4-tab" data-toggle="tab" href="#nav-Example4" role="tab" aria-controls="nav-Example4" aria-selected="true">API functions</a>
+				</div>
+			</nav>
+			<div class="tab-content border-left border-right border-bottom p-3" id="nav-tabContent">
+				<div class="tab-pane show active" id="nav-Example1" role="tabpanel" aria-labelledby="nav-Example1-tab">
+					<p>
+						The first part of a program declares some structures and shared variables, like <code>Node</code> resp. <code>Head</code> in the example below.
+						Additionally, there is a dedicated initializer <code>__init__</code> that is executed atomically once before execution begins.
+						The <code>#name</code> option is optional.
+					</p>
+					<pre class="bg-light border"><code class="c">
+        #name "Program Name"
+        
+        
+        struct Node {
+            data_t val; // 'int' and 'data_t' are synonyms
+            bool marked;
+            Node* next;
+        }
+        
+        Node* Head;
+        
+        
+        void __init__() {
+            Head = malloc;
+            Head-&gt;next = NULL;
+            Head-&gt;marked = false;
+            Head-&gt;val = MIN; // there is also 'MAX'
+        }
+					</code></pre>
+				</div>
+				<div class="tab-pane show" id="nav-Example2" role="tabpanel" aria-labelledby="nav-Example2-tab">
+					<p>
+						First, <code>@contains</code> defines a predicate characterizing the logical contents of a node.
+						This predicate takes a pointer to the node and a value, and returns <code>true</code> iff the given value is considered logically contained in the given node.
+						Second, <code>@outflow</code> defines a predicate characterizing the outflow of a node per pointer field, here <code>next</code>.
+						Third, <code>@invariant</code> defines the node invariants of the program.
+						There is a dedicated invariant for nodes in the <code>local</code> and the <code>shared</code> heap.
+					</p>
+					<pre class="bg-light border"><code class="c">
+        def @contains(Node* node, data_t key) {
+            !node-&gt;marked && node-&gt;val == key
+        }
+        
+        def @outflow[next](Node* node, data_t key) {
+            !node-&gt;marked ==&gt; node-&gt;val &lt; key
+        }
+        
+        def @invariant[local](Node* x) {
+            x-&gt;_flow == 0
+        }
+        
+        def @invariant[shared](Node* x) {
+            Head != NULL
+         && Head-&gt;val == MIN
+         && !Head-&gt;marked
+         && Head-&gt;_flow != 0
+         && [MIN, MAX] in Head-&gt;_flow
+         && x-&gt;val == MIN ==&gt; x == Head
+        
+         && !x-&gt;marked ==&gt; [x-&gt;val, MAX] in x-&gt;_flow
+         && x-&gt;_flow != 0 ==&gt; [x-&gt;val, MAX] in x-&gt;_flow
+        }
+					</code></pre>
+				</div>
+				<div class="tab-pane show" id="nav-Example3" role="tabpanel" aria-labelledby="nav-Example3-tab">
+					<p>
+						Helper functions allow code reuse across multiple API functions.
+						Helpers are defined with the keyword <code>inline</code>.
+						They may have an arbitrary return type, including <code>void</code>, <code>int</code>, <code>int</code>, <code>Node*</code> (or pointers to any other declared struct), and comma separated lists of types.
+					</p>
+					<p>
+						For verification, one can think of helpers being inlined.
+					</p>
+					<pre class="bg-light border"><code class="c">
+        inline &lt;Node*, data_t&gt; locate(data_t key) {
+            Node* curr;
+            data_t k;
+            bool mark;
+        
+            curr = Head;
+            do {
+                curr = curr-&gt;next;
+                k = curr-&gt;val;
+                mark = curr-&gt;marked;
+            } while (k &lt; key || mark);
+            return &lt;curr, k&gt;;
+        }
+					</code></pre>
+				</div>
+				<div class="tab-pane show" id="nav-Example4" role="tabpanel" aria-labelledby="nav-Example4-tab">
+					<p>
+						API functions are targeted by the verification process.
+						They must have return type <code>bool</code> and take a single <code>data_t</code> or <code>int</code> as argument.
+						The allowed names are <code>contains</code>, <code>add</code>, <code>insert</code>, <code>remove</code>, and <code>delete</code>.
+						<kbd>plankton</kbd> derives the specification of API functions from their name.
+					</p>
+					<pre class="bg-light border"><code class="c">
+        bool contains(data_t key) {
+            Node* curr;
+            data_t k;
+        
+            &lt;curr, k&gt; = locate(key);
+            return k == key;
+        }
+        
+        bool add(data_t key) {
+            entry = malloc;
+            entry-&gt;val = key;
+            entry-&gt;marked = false;
+        
+            while (true) {
+                Node* entry, curr;
+                data_t k;
+                &lt;curr, k&gt; = locate(key);
+        
+                if (k == key) {
+                    return false;
+        
+                } else {
+                    atomic {
+                        entry-&gt;next = curr-&gt;next;
+                        curr-&gt;next = entry;
+                    }
+                    return true;
+                }
+            }
+        }
+        
+        bool remove(data_t key) {
+            while (true) {
+                Node* curr;
+                data_t k;
+                &lt;curr, k&gt; = locate(key);
+        
+                next = curr-&gt;next;
+                if (CAS(&lt;curr-&gt;val, curr-&gt;marked&gt;, &lt;k, false&gt;, &lt;k, true&gt;))
+                    return true;
+            }
+        }
+					</code></pre>
+				</div>
+			</div>
+		</div>
+		<br>
+
+
+
+		<!-- ********************************************************************************** -->
+		<!-- ********************************* IMPLEMENTATION ********************************* -->
+		<!-- ********************************************************************************** -->
+		<div class="mt-4">
+			<h1>Notes on the Implementation</h1>
+			<p>
+				The following table links the techniques presented in the paper to the implementation.
+			</p>
+
+			<table class="table">
+				<thead>
+					<tr>
+						<th scope="col">Paper</th>
+						<th scope="col">Implementation</th>
+						<th scope="col">Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<!-- https://github.com/Wolff09/plankton/blob/PLDI22/ -->
+					<tr>
+						<td scope="row">Programs, Logics</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/include/programs/ast.hpp" class="code-link"><code class="text-nowrap">include/programs/ast.hpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/include/logics/ast.hpp" class="code-link"><code class="text-nowrap">include/logics/ast.hpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Abstract syntax tree for programs and the logics.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Flows, Invariants</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/include/engine/config.hpp" class="code-link"><code class="text-nowrap">include/engine/config.hpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Configuration object that specifies the flow and the node invariants.
+							Configuration objects are taken (parsed) from the input program.
+							Currently, the flow is restricted to keyset flows.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Program Simplification</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/parser/" class="code-link"><code class="text-nowrap">src/parser/*</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							The parser supports a richer input language that is transformed into the one defined in <code class="text-nowrap">include/programs/ast.hpp</code>.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Commands</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/post_*.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/post_*.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implementation of Rule <code>(COM-SEM)</code>.
+							There are specialized implementations for assignments to variables (<code class="text-nowrap">post_assign_var.cpp</code>), assignments to memory cells (<code class="text-nowrap">post_assign_write.cpp</code>), assumptions (<code class="text-nowrap">post_assume.cpp</code>), and allocation (<code class="text-nowrap">post_malloc.cpp</code>).
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Loops</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/proof/stmt.cpp" class="code-link"><code class="text-nowrap">src/engine/proof/stmt.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implementation of Rule <code>(LOOP)</code>.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Flow Graphs</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/include/engine/flowgraph.hpp" class="code-link"><code class="text-nowrap">include/engine/flowgraph.hpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/flowgraph/make.hpp" class="code-link"><code class="text-nowrap">src/engine/flowgraph/make.hpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Definition and generation of flow graphs.
+							Flow graphs are generated wrt. a memory assignment by taking a fixed, finite number of reachable nodes starting from the nodes participating in the assignment.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Histories</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/past.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/past.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implementation of history introduction and reasoning.
+							Note that this implements the <em>how</em>.
+							To see <em>when</em> this is performed, refer to <code class="text-nowrap">src/proof/common.hpp</code>.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Futures</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/future.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/future.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implementation of future introduction and reasoning.
+							Note that this implements the <em>how</em>.
+							To see <em>when</em> this is performed, refer to <code class="text-nowrap">src/proof/common.hpp</code>.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Interference</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/stability.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/stability.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Applies interference (i.e. effects on the shared heap) such that annotations become stable (i.e. interference-free).
+							Note that this implements the <em>how</em>.
+							To see <em>when</em> this is performed, refer to <code class="text-nowrap">src/proof/common.hpp</code>.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Join</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/join.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/join.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implementation of the join operation, which deals with now, past, and future predicates.
+							Resource-like entities (variable bindings, points-to predicates, proof obligation resources) are matched manually; the remaining entities are handled semantically by encoding them into SMT.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Entailment</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/implication.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/implication.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Entailment operation, which deals with now, past, and future predicates.
+							Resource-like entities (variable bindings, points-to predicates, proof obligation resources), futures, pasts are matched syntactically; only the now stack is handled semantically by encoding it into SMT.
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Encoding</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/include/engine/encoding.hpp" class="code-link"><code class="text-nowrap">include/engine/encoding.hpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/encoding/" class="code-link"><code class="text-nowrap">src/engine/encoding/*</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							SMT encoding of now predicates.
+							The encoding does not handle resource-like entities (variable bindings, points-to predicates, proof obligation resources).
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Fixed Point</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/proof/api.cpp" class="code-link"><code class="text-nowrap">src/engine/proof/api.cpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/proof/common.cpp" class="code-link"><code class="text-nowrap">src/engine/proof/common.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Implements the fixed point (<code class="text-nowrap">src/engine/proof/api.cpp</code>) saturating the interference by repeatedly generating proofs for the API functions of the input program and extracting new inferferences from the generated proof.
+							The generated proof is guaranteed to be interference-free: interferences are applied to the generated annotation unless a command is a right-mover (<code class="text-nowrap">src/engine/proof/common.cpp</code>).
+							Past and future reasoning is applied whenever interference is applied or as a pre-processing step of the join operation (<code class="text-nowrap">src/engine/proof/common.cpp</code>).
+						</td>
+					</tr>
+					<tr>
+						<td scope="row">Linearizability</td>
+						<td>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/proof/api.cpp" class="code-link"><code class="text-nowrap">src/engine/proof/api.cpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/post_assign_write.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/post_assign_write.cpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/solver/ful.cpp" class="code-link"><code class="text-nowrap">src/engine/solver/ful.cpp</code></a>
+							<br>
+							<a target="new" href="https://github.com/Wolff09/plankton/blob/PLDI22/src/engine/encoding/spec.cpp" class="code-link"><code class="text-nowrap">src/engine/encoding/spec.cpp</code></a>
+						</td>
+						<td class=""> <!-- text-justify -->
+							Linearizability is checked for every proof generated for API function (<code class="text-nowrap">src/engine/proof/api.cpp</code>).
+							The check is performed directly for impure memory assignment (<code class="text-nowrap">src/engine/solver/post_assign_write.cpp</code>) or using past (hindsight) reasoning (<code class="text-nowrap">src/engine/solver/fut.cpp</code>) on top of a function's proof (<code class="text-nowrap">src/engine/proof/api.cpp</code>).
+							Whether or not the specification is met, is checked by encoding the keyset theorem in SMT (<code class="text-nowrap">src/engine/encoding/spec.cpp</code>).
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+
+
+
+
+		<!-- ********************************************************************************** -->
+		<!-- *********************************** REFERENCES *********************************** -->
+		<!-- ********************************************************************************** -->
+		<div id="references" class="mt-4">
+			<br>
+			<h1>References</h1>
+			<div class="ref-item" data-ref-full="Feldman et al. 2018", data-ref-year="2018">
+				<span class="ref-item-id">FeldmanEMRS18</span>
+				<span class="ref-item-author">Yotam M. Y. Feldman, Constantin Enea, Adam Morrison, Noam Rinetzky, and Sharon Shoham. 2018.</span>
+				<span class="ref-item-paper">Order out of Chaos: Proving Linearizability Using Local Views.</span>
+				<span class="ref-item-where">In DISC (LIPIcs, Vol. 121). Springer.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/10.4230/LIPIcs.DISC.2018.23">https://doi.org/10.4230/LIPIcs.DISC.2018.23</a>
+			</div>
+			<div class="ref-item" data-ref-full="Harris 2001", data-ref-year="2001">
+				<span class="ref-item-id">Harris01</span>
+				<span class="ref-item-author">Timothy L. Harris. 2001.</span>
+				<span class="ref-item-paper">A Pragmatic Implementation of Non-blocking Linked-Lists.</span>
+				<span class="ref-item-where">In DISC (LNCS, Vol. 2180). Springer.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/10.1007/3-540-45414-4_21">https://doi.org/10.1007/3-540-45414-4_21</a>
+			</div>
+			<div class="ref-item" data-ref-full="Heller et al. 2005", data-ref-year="2005">
+				<span class="ref-item-id">HellerHLMSS05</span>
+				<span class="ref-item-author">Steve Heller, Maurice Herlihy, Victor Luchangco, Mark Moir, William N. Scherer III, and Nir Shavit. 2005.</span>
+				<span class="ref-item-paper">A Lazy Concurrent List-Based Set Algorithm.</span>
+				<span class="ref-item-where">In OPODIS (LNCS, Vol. 3974). Springer.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/doi.org/10.1007/11795490_3">https://doi.org/10.1007/11795490_3</a>
+			</div>
+			<div class="ref-item" data-ref-full="Michael 2002a", data-ref-year="2002a">
+				<span class="ref-item-id">Michael02a</span>
+				<span class="ref-item-author">Maged M. Michael. 2002.</span>
+				<span class="ref-item-paper">High performance dynamic lock-free hash tables and list-based sets.</span>
+				<span class="ref-item-where">In SPAA..</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/10.1145/564870.564881">https://doi.org/10.1145/564870.564881</a>
+			</div>
+			<div class="ref-item" data-ref-full="O'Hearn et al. 2010", data-ref-year="2010">
+				<span class="ref-item-id">OHearnRVYY10</span>
+				<span class="ref-item-author">Peter W. O’Hearn, Noam Rinetzky, Martin T. Vechev, Eran Yahav, and Greta Yorsh. 2010.</span>
+				<span class="ref-item-paper">Verifying linearizability with hindsight.</span>
+				<span class="ref-item-where">In PODC. ACM.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/10.1145/1835698.1835722">https://doi.org/10.1145/1835698.1835722</a>
+			</div>
+			<div class="ref-item" data-ref-full="Herlihy and Shavit 2008", data-ref-year="2008">
+				<span class="ref-item-id">HerlihyS08</span>
+				<span class="ref-item-author">Maurice Herlihy and Nir Shavit. 2008.</span>
+				<span class="ref-item-paper">The art of multiprocessor programming (Chapter 9.5).</span>
+				<span class="ref-item-where">Morgan Kaufmann.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://isbnsearch.org/isbn/9780123705914">https://isbnsearch.org/isbn/9780123705914</a>
+			</div>
+			<div class="ref-item" data-ref-full="Vechev and Yahav 2008", data-ref-year="2008">
+				<span class="ref-item-id">VechevY08</span>
+				<span class="ref-item-author">Martin T. Vechev and Eran Yahav. 2008.</span>
+				<span class="ref-item-paper">Deriving linearizable fine-grained concurrent objects.</span>
+				<span class="ref-item-where">In PLDI. ACM.</span>
+				<a target="new" class="ref-item-url text-nowrap" href="https://doi.org/10.1145/1375581.1375598">https://doi.org/10.1145/1375581.1375598</a>
+			</div>
+		</div>
+
+		<br><br><br>
+	</div>
+
+	<footer class="footer bg-light p-3">
+		<div class="container text-right">
+			<small class="text-muted">Made with <a target="new" href="https://getbootstrap.com" class="text-dark">Bootstrap</a> and <a target="new" href="https://html9responsiveboilerstrapjs.com" class="text-dark">H9RBS.js</a>. Hosted by <a target="new" href="https://pages.github.com" class="text-dark">GitHub Pages</a>.</small>
+		</div>
+	</footer>
+
+
+
+	<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+	<script type="text/javascript">
+		var CITATION_MAP = { };
+		function mk_link(authors, paper, where, url, linktext) {
+			return '<a class="citation" target="new" data-toggle="tooltip" ' + 'title="' + authors + ' <i>' + paper + '</i> ' + where + '" href="' + url + '">' + linktext + '</a>';
+		}
+		$(".ref-item").each(function(){
+			const ref_id = $(this).find(".ref-item-id").text();
+			const ref_names = $(this).attr("data-ref-full");
+			const ref_year = $(this).attr("data-ref-year");
+			const ref_author = $(this).find(".ref-item-author").text();
+			const ref_paper = $(this).find(".ref-item-paper").text();
+			const ref_where = $(this).find(".ref-item-where").text();
+			const ref_url = $(this).find(".ref-item-url").text();
+			CITATION_MAP[ref_id] = [
+				mk_link(ref_author, ref_paper, ref_where, ref_url, ref_names),
+				mk_link(ref_author, ref_paper, ref_where, ref_url, ref_year),
+			];
+		});
+
+		var all_found = true;
+		$("span.ref-full, span.ref-year").each(function(){
+			const ref_keys = $(this).text().split(",");
+			const full = $(this).hasClass("ref-full") ? true : false;
+			var citation = "";
+			var first = true;
+			for (index = 0, len = ref_keys.length; index < len; ++index) {
+				const key = ref_keys[index].trim();
+				var link;
+				if (key in CITATION_MAP) {
+					link = CITATION_MAP[key][full ? 0 : 1];
+				} else {
+					link = key;
+					all_found = false;
+				}
+				if (!first) {
+					citation += ", ";
+				}
+				first = false;
+				citation += link;
+			}
+			$(this).html(citation);
+		});
+		if (all_found) {
+			$("#references").addClass("d-none");
+		}
+	</script>
+	<script type="text/javascript">
+		$('[data-toggle="tooltip"]').tooltip({ 'html': true });
+	</script>
+</body>
+</html>
