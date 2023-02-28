@@ -14,37 +14,24 @@ import sys
 TIMEOUT = 60 * 60 * 6  # in seconds
 REPETITIONS = 1
 
-EXECUTABLE = "build/bin/plankton"
-BENCHMARKS = {  # name: (path, [flags])
-    "old FineSet.pl": ("examples/FineSet.pl", []),
-    "old LazySet.pl": ("examples/LazySet.pl", []),
-    "old VechevYahavDCas.pl": ("examples/VechevYahavDCas.pl", []),
-    "old VechevYahavCas.pl": ("examples/VechevYahavCas.pl", []),
-    "old ORVYY.pl": ("examples/ORVYY.pl", []),
-    "old Michael.pl": ("examples/Michael.pl", []),
-    "old MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", []),
-    "old Harris.pl": ("examples/Harris.pl", []),
-    "old HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", []),
-    # "old FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin"]),
-    # "old LO_abstract.pl": ("examples/LO_abstract.pl", [""]),
-    ## compare impact of --pastPrecision
-    "new FineSet.pl": ("examples/FineSet.pl", ["--pastPrecision"]),
-    "new LazySet.pl": ("examples/LazySet.pl", ["--pastPrecision"]),
-    "new VechevYahavDCas.pl": ("examples/VechevYahavDCas.pl", ["--pastPrecision"]),
-    "new VechevYahavCas.pl": ("examples/VechevYahavCas.pl", ["--pastPrecision"]),
-    "new ORVYY.pl": ("examples/ORVYY.pl", ["--pastPrecision"]),
-    "new Michael.pl": ("examples/Michael.pl", ["--pastPrecision"]),
-    "new MichaelWaitFreeSearch.pl": ("examples/MichaelWaitFreeSearch.pl", ["--pastPrecision"]),
-    "new Harris.pl": ("examples/Harris.pl", ["--pastPrecision"]),
-    "new HarrisWaitFreeSearch.pl": ("examples/HarrisWaitFreeSearch.pl", ["--pastPrecision"]),
-    # "new FemrsTreeNoMaintenance.pl": ("examples/FemrsTreeNoMaintenance.pl", ["--loopNoPostJoin", "--pastPrecision"]),
-    # "new LO_abstract.pl": ("examples/LO_abstract.pl", ["--pastPrecision"]),
+EXECUTABLE = "./plankton"
+BENCHMARKS = {  # path: [flags]
+    "examples/LazySet.pl": [],
+    "examples/FineSet.pl": ["--loopNoPostJoin"],
+    "examples/VechevYahavDCas.pl": [],
+    "examples/VechevYahavCas.pl": [],
+    "examples/ORVYY.pl": [],
+    "examples/Michael.pl": [],
+    "examples/MichaelWaitFreeSearch.pl": ["--loopNoPostJoin"],
+    "examples/Harris.pl": [],
+    "examples/HarrisWaitFreeSearch.pl": [],
+    # "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
+    # "examples/LO_abstract.pl": [""],
 }
 
 #
 # CONFIGURATION end
 #
-
 
 REGEX_GIST = r"@gist\[(?P<path>.*?)\]=(?P<result>[01]),(?P<time>[0-9]*);(.*)"
 REGEX_ITER = r"\[iter-(?P<count>[0-9]*)\] Fixed-point reached."
@@ -134,10 +121,12 @@ def extract_info(output):
     return Result(total, iters, eff, can, com, fut, hist, join, inter)
 
 
-def run_with_timeout(name):
-    if name not in BENCHMARKS:
-        raise NameError("Internal error: could not find bechmark with name '" + name + "'")
-    path, flags = BENCHMARKS.get(name)
+def run_with_timeout(path, precise_past):
+    if path not in BENCHMARKS:
+        raise NameError("Internal error: could not find benchmark file '" + path + "'")
+    flags = BENCHMARKS.get(path)
+    if precise_past:
+        flags = flags + ["--pastPrecision"]
     all_args = [EXECUTABLE, path] + flags
 
     # make sure to properly kill subprocesses after timeout
@@ -153,49 +142,68 @@ def run_with_timeout(name):
     return output
 
 
-def run_test(name, i):
-    output = run_with_timeout(name)
+def run_test(path, i, precise_past):
+    output = run_with_timeout(path, precise_past)
     result = extract_info(output)
-    print("[{:0>2}/{:0>2}] {:>12}  for  {:<40}".format(i+1, REPETITIONS, result.info, name), flush=True)
+    note = "new" if precise_past else "old"
+    print("[{:0>2}/{:0>2}] {:>12}  for  {:<3} {:<40}".format(i+1, REPETITIONS, result.info, note, path), flush=True)
     return result
+
+
+def run_test_old(path, i):
+    return run_test(path, i, False)
+
+
+def run_test_new(path, i):
+    return run_test(path, i, True)
+
+
+def make_line_values(path, precise_past):
+    key = (path, "new") if precise_past else (path, "old")
+    successes = [x for x in RESULTS.get(key, []) if x.success]
+    if len(successes) == 0:
+        return False, ("--", "--", "--", "--", "--", "--", "--", "--", "failed ✗")
+
+    iters = average([x.iter for x in successes], 2)
+    eff = average([x.eff for x in successes], 2)
+    can = average([x.can for x in successes], 2)
+    total = average([x.total for x in successes])
+    com = average([x.com for x in successes])
+    fut = average([x.fut for x in successes])
+    hist = average([x.hist for x in successes])
+    join = average([x.join for x in successes])
+    inter = average([x.inter for x in successes])
+
+    com = str(int(round((com / (float(total))) * 100.0, 0))) + "%"
+    fut = str(int(round((fut / (float(total))) * 100.0, 0))) + "%"
+    hist = str(int(round((hist / (float(total))) * 100.0, 0))) + "%"
+    join = str(int(round((join / (float(total))) * 100.0, 0))) + "%"
+    inter = str(int(round((inter / (float(total))) * 100.0, 0))) + "%"
+    total = human_readable(total) + " ✓"
+
+    return True, (iters, eff, can, com, fut, hist, join, inter, total)
 
 
 def finalize():
     print()
     print()
-    header = "{:<40} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>15}"
-    print(header.format("Program", "Iter", "Eff", "Cand", "Com", "Fut", "Hist", "Join", "Inter", "Linearizable"))
-    print("-----------------------------------------+-------+-------+-------+-------+-------+-------+-------+-------+-----------------")
-    someFailed = False
+    header = "{:<40} | {:<7} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>5} | {:>15}"
+    print(header.format("Program", "Version", "Iter", "Eff", "Cand", "Com", "Fut", "Hist", "Join", "Inter", "Linearizable"))
+    print("-----------------------------------------+---------+-------+-------+-------+-------+-------+-------+-------+-------+-----------------")
+    some_failed = False
     for path in BENCHMARKS:
-        successes = [x for x in RESULTS.get(path, []) if x.success]
-        if len(successes) == 0:
-            print(header.format(path, "--", "--", "--", "--", "--", "--", "--", "--", "failed ✗"))
-            someFailed = True
-            continue
-        iters = average([x.iter for x in successes], 2)
-        eff = average([x.eff for x in successes], 2)
-        can = average([x.can for x in successes], 2)
-        total = average([x.total for x in successes])
-        com = average([x.com for x in successes])
-        fut = average([x.fut for x in successes])
-        hist = average([x.hist for x in successes])
-        join = average([x.join for x in successes])
-        inter = average([x.inter for x in successes])
+        good_old, values_old = make_line_values(path, False)
+        good_new, values_new = make_line_values(path, True)
+        if not good_old or not good_new:
+            some_failed = True
+        print(header.format(path, "old", *values_old))
+        print(header.format("", "new", *values_new))
 
-        com = str(int(round((com / (float(total))) * 100.0, 0))) + "%"
-        fut = str(int(round((fut / (float(total))) * 100.0, 0))) + "%"
-        hist = str(int(round((hist / (float(total))) * 100.0, 0))) + "%"
-        join = str(int(round((join / (float(total))) * 100.0, 0))) + "%"
-        inter = str(int(round((inter / (float(total))) * 100.0, 0))) + "%"
-        total = human_readable(total) + " ✓"
-
-        print(header.format(path, iters, eff, can, com, fut, hist, join, inter, total))
-    if someFailed:
+    if some_failed:
         print()
         print()
         print("Note: due to issues with Z3 and Python's subprocess library, benchmarks might fail spuriously. ")
-        print("      Try invoking plankton directly, e.g.: {0} path/to/benchmark".format(EXECUTABLE))
+        print("      Try invoking plankton directly (without pipes), e.g.: {0} path/to/benchmark".format(EXECUTABLE))
 
 
 def main():
@@ -203,9 +211,11 @@ def main():
     print("Running benchmarks...")
     print()
     for i in range(REPETITIONS):
-        for name in BENCHMARKS:
-            result = run_test(name, i)
-            RESULTS[name] = RESULTS.get(name, []) + [result]
+        for path in BENCHMARKS:
+            result_old = run_test_old(path, i)
+            RESULTS[(path, "old")] = RESULTS.get((path, "old"), []) + [result_old]
+            result_new = run_test_new(path, i)
+            RESULTS[(path, "new")] = RESULTS.get((path, "new"), []) + [result_new]
     finalize()
 
 
