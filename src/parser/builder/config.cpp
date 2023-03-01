@@ -50,7 +50,7 @@ inline const Type& GetValueType(const AstBuilder& builder, PlanktonParser::TypeC
 }
 
 template<bool VAL>
-[[nodiscard]] inline inline std::unique_ptr<ImplicationSet> MkBool() {
+[[nodiscard]] inline std::unique_ptr<ImplicationSet> MkBool() {
     auto result = std::make_unique<ImplicationSet>();
     if constexpr (!VAL) {
         auto imp = std::make_unique<NonSeparatingImplication>();

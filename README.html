@@ -73,8 +73,20 @@
 			padding: 0 .2rem;
 		}
 
+		pre {
+			padding-top: .5rem;
+			padding-bottom: .5rem;
+		}
+		pre.tight {
+			padding-top: 0;
+			padding-bottom: 0;
+			margin-bottom: 0;
+		}
 		pre.files {
 			line-height: 1.1rem;
+		}
+		pre code.color {
+			color: #e83e8c;
 		}
 
 		.code-link {
@@ -130,7 +142,7 @@
 			</p>
 			<p class="lead text-justify mb-2">
 				<strong>Artifact Repository.</strong>
-				<a href="????">https://zenodo.org/record/?????</a>
+				<a href="https://zenodo.org/record/7686111">https://zenodo.org/record/7686111</a>
 			</p>
 		</div>
 
@@ -144,14 +156,10 @@
 				<strong><i class="fas fa-shipping-fast"></i> Quick Start <i class="fas fa-shipping-fast"></i></strong>
 				<ol class="mt-2 mb-2">
 					<li class="mt-1">Install <a target="new" href="https://www.docker.com/">Docker</a>.</li>
-					<li class="mt-1">Download <code>???</code> from the <a href="???">Zenodo repository</a>.</li>
 					<li class="mt-1">
 						Get the thing up and running: <br>
-						<pre class="mb-0"><code style="color: #e83e8c;"><!--
-	-->cd path/to/download/ \
-	&& docker build . -t plankton \
-	&& docker run -it plankton<!--
-						--></code></pre>
+						<pre class="tight"><code class="color">  docker import https://zenodo.org/record/7686111/plankton_docker.tgz
+  docker run -it plankton</code></pre>
 					</li>
 					<li class="mt-1">
 						Check the installation.
@@ -160,12 +168,10 @@
 								Run: <code>./plankton examples/check.pl</code>
 								<br>
 								Expected output: successful verification (no errors).
+								<br>
+								(This concludes the <a href="#started">Getting Started</a> part.)
 							</li> 
 						</ul>
-					</li>
-					<li>
-						This concludes the <a href="#started">Getting Started</a> part.
-						We turn to the <a href="#eval">Step-by-Step</a> part.
 					</li>
 					<li class="mt-1">
 						Reproduce Claim 1: <i>our new <kbd>plankton</kbd> version can verify the LO-tree</i>.
@@ -209,43 +215,54 @@
 		<div class="mt-4">
 			<h1 id="started"><span class="index">A</span> Getting Started</h1>
 			<p>
-				To get the artifact up and running, you may choose between an VM image, a docker image, or a docker build script at your own convenience.
-				Please note, however, that the prebuilt VM/docker images are compatible with <strong>x86</strong> hardware only.
-				Should you conduct the artifact evaluation on <strong>Apple Silicon</strong>, please use the docker build script.
-			</p>
-			<p>
-				For the sake of completeness, we also document how to build the artifact from source <a href="#deepdive">at the end</a>.
+				To get the artifact up and running, you may choose between a prebuilt docker image or a docker build script.
+				The prebuilt image supports <strong>amd64</strong> and <strong>arm64</strong> (Apple Silicon) hardware.
+				The build script is universal.
 			</p>
 
 			<!-- ******************************** REPO STRUCTURE ******************************** -->
 			<h4>Repository Structure</h4>
 			<p>
-				The <a href="???">Zenodo repository</a> for this artifact is structured as follows:
+				The <a href="https://zenodo.org/record/7686111">Zenodo repository</a> for this artifact is structured as follows:
 			</p>
 			<pre class="bg-light border files">
-
-  https://zenodo.org/record/?????
-  ├── plankton_docker_arm.???
-  ├── plankton_docker_x86.???
-  ├── plankton_vm.vdi
-  ├── plankton.zip
-  └── README.html
-			</pre>
+  https://zenodo.org/record/7686111
+  ├── plankton_amd64.tgz   # prebuilt docker image
+  ├── plankton_arm64.tgz   # prebuilt docker image
+  ├── plankton.zip         # source files + docker build script
+  └── README.html          # this document</pre>
 			<p>
-				This document is reproduced in <code>README.html</code>.
-				The source files along with a docker build script are in <code>plankton.zip</code>.
-				Files <code>plankton_docker_arm.???</code> and <code>plankton_docker_x86.???</code> are docker containers for <strong>Apple Silicon</strong> (<strong>ARM</strong>) and <strong>x86</strong> hardware, respectively.
-				File <code>plankton_vm.vdi</code> is an <strong>x86</strong> virtual machine image created with <a href="https://www.virtualbox.org/">Virtual box</a>.
+				You do not need to download the entire repository!
+				See your preferred method of installation below for more details.
 			</p>
 
+			<!-- ********************************* DOCKER IMAGE ********************************* -->
+			<h4>Install Option 1: Docker image (amd64, arm64)</h4>
+			<ol>
+				<li>
+					Install <a href="https://www.docker.com/">Docker</a>.
+				</li>
+				<li>
+					Import directly from Zenodo: <code class="bash">docker import https://zenodo.org/record/7686111/plankton_docker.tgz</code>
+					<br>
+					Alternatively, if you already downloaded the docker container, do: <code class="bash">docker import path/to/plankton_docker.tgz</code>
+				</li>
+				<li>
+					Start the docker image: <code class="bash">docker run -it plankton</code>
+				</li>
+				<li>
+					Done! <a href="#chkinstall">Check the installation</a> now.
+				</li>
+			</ol>
+
 			<!-- *********************************** VM IMAGE *********************************** -->
-			<h4>Install Option 1: VM image (x86)</h4>
+			<h4>Install Option 2: VM image (amd64)</h4>
 			<ol>
 				<li>
 					Install a virtual machine player, preferably <a href="https://www.virtualbox.org/">Virtual box</a>.
 				</li>
 				<li>
-					Download the virtual machine image <code>????</code> from the <a href="???">Zenodo repository</a>.
+					Download the virtual machine image <code>plankton_vm.vdi</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
 				</li>
 				<li>
 					Import the downloaded VM image into the VM player and run it.
@@ -253,90 +270,51 @@
 					The username and password for the virtual machine are <code>pldi</code> and <code>123</code>, respectively.
 				</li>
 				<li>
-					Open a terminal an run the following commands:
-					<pre class="bg-light border"><code class="bash">
-  cd ~/artifact
-  ./plankton examples/check.pl
-					</code></pre>
-				</li>
-				<li>
-					If there are no errors, you are all set for the full evaluation!
-				</li>
-			</ol>
-
-			<!-- ********************************* DOCKER IMAGE ********************************* -->
-			<h4>Option 2: Docker image (arm, x86)</h4>
-			<ol>
-				<li>
-					Install <a href="https://www.docker.com/">Docker</a>.
-				</li>
-				<li>
-					Download the docker image <code>????</code> from the <a href="???">Zenodo repository</a>.
-				</li>
-				<li>
-					Import the docker image.
-					In a terminal, this can be done like so:
-					<pre class="bg-light border"><code class="bash">
-  ?????????????????
-					</code></pre>
-				</li>
-				<li>
-					Start the docker image: <code class="bash">??????</code>
-				</li>
-				<li>
-					Run: <code class="bash">./plankton examples/check.pl</code>
-				</li>
-				<li>
-					If there are no errors, you are all set for the full evaluation!
+					Done! <a href="#chkinstall">Check the installation</a> now.
 				</li>
 			</ol>
 
 			<!-- ********************************* DOCKER SCRIPT ******************************** -->
-			<h4>Option 3: Docker build script (universal)</h4>
+			<h4>Install Option 3: Docker build script (universal)</h4>
 			<ol>
 				<li>
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download source files <code>?????</code> from the <a href="???">Zenodo repository</a> and unzip, say to this location: <code>path/to/plankton-pldi</code>.
+					Download source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> and unzip, say to this location: <code>path/to/plankton</code>.
 				</li>
 				<li>
-					Create a docker instance for the artifact: <code class="bash">docker build . -t plankton</code>
+					Create a docker instance for the artifact:
+					<pre class="bg-light border"><code class="bash">  cd path/to/plankton
+  docker build . -t plankton</code></pre>
 				</li>
 				<li>
 					Start the instance: <code class="bash">docker run -it plankton</code>
 				</li>
 				<li>
-					Run: <code class="bash">./plankton examples/check.pl</code>
-				</li>
-				<li>
-					If there are no errors, you are all set for the <a href="#eval">full evaluation</a>!
+					Done! <a href="#chkinstall">Check the installation</a> now.
 				</li>
 			</ol>
 
 			<!-- ************************************* CHECK ************************************ -->
-			<h4>Check Installation</h4>
+			<h4 id="chkinstall">Check Installation</h4>
 			<p>
 				From within the artifact installation, run this:
 			</p>
-			<pre class="bg-light border"><code class="bash">
-  cd /artifact/plankton
-  ./plankton examples/check.pl
-			</code></pre>
+			<pre class="bg-light border"><code class="bash">  cd /artifact/plankton
+  ./plankton examples/check.pl</code></pre>
 			<p>
 				This command is expected to finish without errors within a few seconds.
 				At the end of the output, you should see something like this:
 			</p>
 			<pre class="bg-light border">
-
   #
   # Verdict for '"Installation Check"':
   #   is linearizable: YES
   #   time taken (ms): 7903
   #
   
-  @gist[../examples/check.pl]=1,7903;
-			</pre>
+  @gist[../examples/check.pl]=1,7903;</pre>
 			<p>
 				The important part here is that <kbd>plankton</kbd> successfully establishes linearizability.
 				The time it takes to do so may vary depending on your hardware.
@@ -349,7 +327,6 @@
 				All three installation methods from above yield an artifact with the following structure:
 			</p>
 			<pre class="bg-light border files">
-
   /artifact/
   ├── plankton/
   │   ├── examples/
@@ -360,8 +337,7 @@
   ├── plankton-debug/
   │   └── ...
   └── z3/
-      └── ...
-			</pre>
+      └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
 				In there is the executable <code>plankton</code>, a Python script <code>benchmark.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
@@ -386,6 +362,9 @@
 				We show how to reproduce the experiments from the submitted version of our paper (<a href="#claim1">Claim 1</a>).
 				Moreover, we show hot how to produce additional experimental results (<a href="#claim2">Claim 2</a>) that we will add to the camera-ready version, as requested by the reviewers.
 			</p>
+			<p>
+				If you do not have the artifact running anymore, do: <code>docker run -it plankton</code>.
+			</p>
 
 			<!-- ************************************ LO TREE *********************************** -->
 			<h4 id="claim1">Claim 1: Verifying the LO-tree</h4>
@@ -397,10 +376,8 @@
 			<p>
 				To repeat the verification, run the following command:
 			</p>
-			<pre class="bg-light border"><code class="bash">
-  cd /artifact/plankton
-  ./plankton examples/LO_abstract.pl --pastPrecision
-			</code></pre>
+			<pre class="bg-light border"><code class="bash">  cd /artifact/plankton
+  ./plankton examples/LO_abstract.pl --pastPrecision</code></pre>
 			<p>
 				The flag <code class="bash">--pastPrecision</code> instructs <kbd>plankton</kbd> to use our novel temporal interpolation.
 				Without the flag, <kbd>plankton</kbd> performs its original analysis as devised by <span class="ref-full">MeyerWW22</span>; feel free to see <kbd>plankton</kbd> fail when omitting the flag.
@@ -413,29 +390,25 @@
 				Once finished, <kbd>plankton</kbd> will output the verdict and time taken, e.g.:
 			</p>
 			<pre class="bg-light border">
-
-...
-[iter-2] Fixed-point reached.
-Proof generation was successful!
-...
-
-#
-# Verdict for '"Logical Ordering Tree (most general tree overlay)"':
-#   is linearizable: YES
-#   time taken (ms): 2483975
-#
-			</pre>
+  ...
+  [iter-2] Fixed-point reached.
+  Proof generation was successful!
+  ...
+  
+  #
+  # Verdict for '"Logical Ordering Tree (most general tree overlay)"':
+  #   is linearizable: YES
+  #   time taken (ms): 2483975
+  #</pre>
 			<p>
 				Running <code class="bash">./plankton examples/LO_abstract.pl</code> without the <code class="bash">--pastPrecision</code> flag will result in verification failure.
 				If you do so, you should obtain output along the following lines:
 			</p>
 			<pre class="bg-light border">
+  ...
+  [iter-1][fun-contains] Checking linearizability of function 'contains'...
 
-...
-[iter-1][fun-contains] Checking linearizability of function 'contains'...
-
-ERROR: Could not establish linearizability for function 'contains'.
-			</pre>
+  ERROR: Could not establish linearizability for function 'contains'.</pre>
 
 			<p>
 				While <kbd>plankton</kbd> is constructing a proof, its output informs you of the current status.
@@ -443,14 +416,12 @@ ERROR: Could not establish linearizability for function 'contains'.
 				For an example, consider this output snippet:
 			</p>
 			<pre class="bg-light border">
-
-...
-[iter-1][fun-contains][macro-traverse][loop-2] Post for 'c_1 = y_1->left; '. (1) 
-[iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
-[iter-1][fun-contains][macro-traverse][loop-2] Post for 'assume(k_1 >= y_1->key); '. (1) 
-[iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
-...
-			</pre>
+  ...
+  [iter-1][fun-contains][macro-traverse][loop-2] Post for 'c_1 = y_1->left; '. (1) 
+  [iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
+  [iter-1][fun-contains][macro-traverse][loop-2] Post for 'assume(k_1 >= y_1->key); '. (1) 
+  [iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
+  ...</pre>
 			<p>
 				Here <kbd>plankton</kbd> is (i) in the 1st iteration for (ii) function <code>contains</code>, handling (iii) commands <code>c_1 = y_1->left</code> followed by <code>assume(k_1 >= y_1->key)</code> during the (iv) 2nd iteration of a fixed point for finding a loop in macro (v) <code>traverse</code> called from within another macro <code>locate</code>.
 				After each command, <kbd>plankton</kbd> makes that the resulting proof state (a separation logic assertion) stable under interference (cf. end of Section 3 in the paper).
@@ -506,9 +477,7 @@ ERROR: Could not establish linearizability for function 'contains'.
 			<p>
 				To analyze the benchmark suite with both versions of <kbd>plankton</kbd>, run the following command (this may take several hours, see below):
 			</p>
-			<pre class="bg-light border"><code class="bash">
-  python3 benchmark.py
-			</code></pre>
+			<pre class="bg-light border"><code class="bash"> python3 benchmark.py</code></pre>
 			<p>
 				You can specify the number of times each benchmark should be repeated to average the runtime: <code class="bash">python3 benchmark.py 5</code>, for instance, performs 5 repetitions.
 				By default, the script will execute every benchmark once.
@@ -521,14 +490,12 @@ ERROR: Could not establish linearizability for function 'contains'.
 				After all benchmarks are run, the expected output on an Apply M1 is the following table:
 			</p>
 			<pre class="bg-light border">
-  [][][][] ?????????????????
-			</pre>
+  [][][][] ?????????????????</pre>
 			<p>
 				For comparison, the expected output on an Intel i5-8600K is this:
 			</p>
 			<pre class="bg-light border">
-  [][][][] ?????????????????
-			</pre>
+  [][][][] ?????????????????</pre>
 			<p>
 				Here, we are concerned only with the last column of the table, which is the verification verdict and the overall time it took.
 				We stress that absolute running times vary from system to system.
@@ -573,7 +540,8 @@ ERROR: Could not establish linearizability for function 'contains'.
 			<h4>Build from Source</h4>
 			<p>
 				To compile this project you need <strong>CMake</strong> (>3.21), <strong>CLAN</strong> (>12.0), <strong>Java JRE</strong> (>1.6), and <strong>Z3</strong> (<a target="new" href="https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7">v4.8.7</a>).
-				Compilation with <strong>GCC</strong> and <strong>G++</strong> (>10.0) is also possible, but the following guide focuses on <strong>CLANG</strong>.
+				Additionally, you may need the libraries <code>uuid</code>, <code>uuid-dev</code>, and <code>pkg-config</code>.
+				Compilation with <strong>GCC</strong> and <strong>G++</strong> (>10.0) is also possible, but we recommend <strong>CLANG</strong>.
 				To run the benchmarking script, you need <strong>Pyton 3</strong> (>3.5).
 			</p>
 
@@ -591,18 +559,16 @@ ERROR: Could not establish linearizability for function 'contains'.
 
 			<h5>Compilation</h5>
 			<p>
-				To build the project, download the source code <code>????.zip</code> from the <a href="???">Zenodo repository</a>.
+				To build the project, download the source code <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
 				Then, do the following
 			</p>
-			<pre class="bg-light border"><code class="bash">
-  cd path/to/plankton-pldi.zip
+			<pre class="bg-light border"><code class="bash">  cd path/to/plankton.zip
   unzip plankton-pldi.zip  # alternatively: tar -xvf plankton-pldi.zip
   mkdir build
   cd build
   CXX=/path/to/CXX-compiler cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation
   CXX=/path/to/CXX-compiler make
-  make install
-			</code></pre>
+  make install</code></pre>
 			<p>
 				This creates a folder <code>/path/to/installation/plankton</code> at the specified location.
 				This folder contains all binaries, scripts, and examples needed to reproduce the evaluation from the paper.
@@ -623,9 +589,7 @@ ERROR: Could not establish linearizability for function 'contains'.
 			<p>
 				You invoke <kbd>plankton</kbd> like so:
 			</p>
-			<pre class="bg-light border"><code class="">
-  ./plankton  [OPTION]  &lt;path_to_program&gt;
-			</code></pre>
+			<pre class="bg-light border"><code class="">  ./plankton  [OPTION]  &lt;path_to_program&gt;</code></pre>
 			<p>
 				The flags/options and their arguments are listed in the following table (excerpt).
 			</p>
@@ -689,8 +653,7 @@ ERROR: Could not establish linearizability for function 'contains'.
 				Additionally, there is a dedicated initializer <code>__init__</code> that is executed atomically once before execution begins.
 				The <code>#name</code> option is optional.
 			</p>
-			<pre class="bg-light border"><code class="c">
-  #name "Program Name"
+			<pre class="bg-light border"><code class="c">  #name "Program Name"
   
   struct Node {
       data_t val; // 'int' and 'data_t' are synonyms
@@ -705,8 +668,7 @@ ERROR: Could not establish linearizability for function 'contains'.
       Head-&gt;next = NULL;
       Head-&gt;marked = false;
       Head-&gt;val = MIN; // there is also 'MAX'
-  }
-			</code></pre>
+  }</code></pre>
 
 			<h5>Flow&amp;Node invariants</h5>
 			<p>
@@ -716,8 +678,7 @@ ERROR: Could not establish linearizability for function 'contains'.
 				Third, <code>@invariant</code> defines the node invariants of the program.
 				There is a dedicated invariant for nodes in the <code>local</code> and the <code>shared</code> heap.
 			</p>
-			<pre class="bg-light border"><code class="c">
-  def @contains(Node* node, data_t key) {
+			<pre class="bg-light border"><code class="c">  def @contains(Node* node, data_t key) {
       !node-&gt;marked && node-&gt;val == key
   }
   
@@ -739,8 +700,7 @@ ERROR: Could not establish linearizability for function 'contains'.
   
    && !x-&gt;marked ==&gt; [x-&gt;val, MAX] in x-&gt;_flow
    && x-&gt;_flow != 0 ==&gt; [x-&gt;val, MAX] in x-&gt;_flow
-  }
-			</code></pre>
+  }</code></pre>
 
 			<h5>Helpers/Macros</h5>
 			<p>
@@ -751,8 +711,7 @@ ERROR: Could not establish linearizability for function 'contains'.
 			<p>
 				For verification, one can think of helpers being inlined.
 			</p>
-			<pre class="bg-light border"><code class="c">
-  inline &lt;Node*, data_t&gt; locate(data_t key) {
+			<pre class="bg-light border"><code class="c">  inline &lt;Node*, data_t&gt; locate(data_t key) {
       Node* curr;
       data_t k;
       bool mark;
@@ -764,8 +723,7 @@ ERROR: Could not establish linearizability for function 'contains'.
           mark = curr-&gt;marked;
       } while (k &lt; key || mark);
       return &lt;curr, k&gt;;
-  }
-			</code></pre>
+  }</code></pre>
 
 			<h5>API functions</h5>
 			<p>
@@ -774,50 +732,48 @@ ERROR: Could not establish linearizability for function 'contains'.
 				The allowed names are <code>contains</code>, <code>add</code>, <code>insert</code>, <code>remove</code>, and <code>delete</code>.
 				<kbd>plankton</kbd> derives the specification of API functions from their name.
 			</p>
-			<pre class="bg-light border"><code class="c">
-    bool contains(data_t key) {
-        Node* curr;
-        data_t k;
-    
-        &lt;curr, k&gt; = locate(key);
-        return k == key;
-    }
-    
-    bool add(data_t key) {
-        entry = malloc;
-        entry-&gt;val = key;
-        entry-&gt;marked = false;
-    
-        while (true) {
-            Node* entry, curr;
-            data_t k;
-            &lt;curr, k&gt; = locate(key);
-    
-            if (k == key) {
-                return false;
-    
-            } else {
-                atomic {
-                    entry-&gt;next = curr-&gt;next;
-                    curr-&gt;next = entry;
-                }
-                return true;
-            }
-        }
-    }
-    
-    bool remove(data_t key) {
-        while (true) {
-            Node* curr;
-            data_t k;
-            &lt;curr, k&gt; = locate(key);
-    
-            next = curr-&gt;next;
-            if (CAS(&lt;curr-&gt;val, curr-&gt;marked&gt;, &lt;k, false&gt;, &lt;k, true&gt;))
-                return true;
-        }
-    }
-			</code></pre>
+			<pre class="bg-light border"><code class="c">  bool contains(data_t key) {
+      Node* curr;
+      data_t k;
+  
+      &lt;curr, k&gt; = locate(key);
+      return k == key;
+  }
+  
+  bool add(data_t key) {
+      entry = malloc;
+      entry-&gt;val = key;
+      entry-&gt;marked = false;
+  
+      while (true) {
+          Node* entry, curr;
+          data_t k;
+          &lt;curr, k&gt; = locate(key);
+  
+          if (k == key) {
+              return false;
+  
+          } else {
+              atomic {
+                  entry-&gt;next = curr-&gt;next;
+                  curr-&gt;next = entry;
+              }
+              return true;
+          }
+      }
+  }
+  
+  bool remove(data_t key) {
+      while (true) {
+          Node* curr;
+          data_t k;
+          &lt;curr, k&gt; = locate(key);
+  
+          next = curr-&gt;next;
+          if (CAS(&lt;curr-&gt;val, curr-&gt;marked&gt;, &lt;k, false&gt;, &lt;k, true&gt;))
+              return true;
+      }
+  }</code></pre>
 
 
 			<!-- ******************************** IMPLEMENTATION ******************************** -->
