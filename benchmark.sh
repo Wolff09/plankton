@@ -5,17 +5,17 @@ LOGS="logs"
 EXECUTABLE="./plankton"
 PRINTER="python3 prettyprint.py"
 BENCHMARKS=(
-  "FineSet"
-  "LazySet"
-  "VechevYahavDCas"
-  "VechevYahavCas"
-  "ORVYY"
-  "FemrsTreeNoMaintenance"
-  "Michael"
-  "MichaelWaitFreeSearch"
-  "Harris"
-  "HarrisWaitFreeSearch"
-  # "examples/LO_abstract.pl" ""
+  "FineSet:--future"
+  "LazySet:--future"
+  "VechevYahavDCas:--future"
+  "VechevYahavCas:--future"
+  "ORVYY:--future"
+  "FemrsTreeNoMaintenance:--future --loopNoPostJoin"
+  "Michael:--future"
+  "MichaelWaitFreeSearch:--future"
+  "Harris:--future"
+  "HarrisWaitFreeSearch:--future"
+  # "examples/LO_abstract.pl:"
 )
 
 
@@ -25,12 +25,14 @@ rm -f -- "${LOGS}"/*
 for (( iteration = 0; iteration < ITER; iteration++ )); do
   echo "# Iteration $((iteration + 1))/${ITER}"
   for (( index = 0; index < ${#BENCHMARKS[@]}; index++ )); do
-    name="${BENCHMARKS[$index]}"
+    entry="${BENCHMARKS[$index]}"
+    name=${entry%%:*}
+    flags=${entry#*:}
     input="examples/${name}.pl"
-    output_old="${LOGS}/${index}-${name}-old-${iteration}.txt"
-    output_new="${LOGS}/${index}-${name}-new-${iteration}.txt"
-    cmd_old="${EXECUTABLE} ${input} --future --loopNoPostJoin --old"
-    cmd_new="${EXECUTABLE} ${input} --future --loopNoPostJoin --new"
+    output_old="${LOGS}/${name}-old-${iteration}.txt"
+    output_new="${LOGS}/${name}-new-${iteration}.txt"
+    cmd_old="${EXECUTABLE} --old ${flags} ${input}"
+    cmd_new="${EXECUTABLE} --new ${flags} ${input}"
     # running original analysis
     touch "${output_old}"
     echo -n "    - Running --old analysis: ${name} "

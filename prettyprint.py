@@ -1,8 +1,6 @@
 # -*- coding: utf8 -*-
 
 import os
-import signal
-from subprocess import Popen, PIPE, TimeoutExpired
 from statistics import mean
 import re
 import sys

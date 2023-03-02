@@ -46,7 +46,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     TCLAP::SwitchArg useFutures("", "future", "Uses futures to handle updates that affect unboundedly many nodes in the heap graph", cmd, false);
     TCLAP::SwitchArg flagNewMode("", "new", "Uses novel hindsight reasoning (temporal interpolation) from PLDI'23", false);
     TCLAP::SwitchArg flagOldMode("", "old", "Uses original hindsight reasoning from OOPSLA'22", false);
-    TCLAP::OneOf modeGroup;
+    TCLAP::EitherOf modeGroup;
     modeGroup.add(flagNewMode).add(flagOldMode);
     cmd.add(modeGroup);
 
