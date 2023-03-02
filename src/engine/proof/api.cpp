@@ -18,6 +18,9 @@ void ProofGenerator::GenerateProof() {
 
     INFO(infoPrefix << "Proof generation for '" << program.name << "' initiated." << std::endl)
     INFO(infoPrefix << "Starting with empty interference set." << std::endl)
+    if (!setup.useFutures) {
+        futureSuggestions.clear();
+    }
     if (futureSuggestions.empty()) {
         INFO(infoPrefix << "Using no future suggestions." << std::endl)
     } else {

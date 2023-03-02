@@ -184,9 +184,9 @@
 				</li>
 				<li>
 					<p>
-						Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> using one of the following commands that fits you hardware architecture:
+						Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> using <b>one</b> of the following commands that fits you hardware architecture:
 					</p>
-					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar  # arm64 and Apple Silicon
+					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar  # arm64 including Apple Silicon
   docker import https://zenodo.org/record/7686111/plankton_x86.tar    # or x86</code></pre>
 						If you do not know the architecture of you system, run the command <code>arch</code> in a shell.
 						It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
@@ -267,14 +267,15 @@
   │   ├── source/
   │   │   └── ...
   │   ├── plankton
-  │   └── benchmark.py
+  │   ├── benchmark.sh
+  │   └── prettyprint.py
   ├── plankton-debug/
   │   └── ...
   └── z3/
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, a Python script <code>benchmark.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was built.
+				In there is the executable <code>plankton</code>, a shell script <code>benchmark.sh</code> for the <a href="#eval">step-by-step instructions</a>, a Python script <code>prettyprint.py</code> used by <code>benchmark.sh</code>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -305,15 +306,15 @@
 			<p>
 				<strong>Central claim:</strong>
 				our new version of <kbd>plankton</kbd> automatically verifies a version of the <i>LO-tree</i> <span class="ref-full">DrachslerVY14</span> where the maintenance operations are replaced by <i>most general stubs</i>.
-				The code of the implementation can be found in the file <code>examples/LO_abstract.pl</code>
+				The code of the implementation can be found in the file <code>examples/LO_tree.pl</code>
 			</p>
 			<p>
 				To repeat the verification, run the following command:
 			</p>
-			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_abstract.pl --pastPrecision</code></pre>
+			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --new</code></pre>
 			<p>
-				The flag <code class="bash">--pastPrecision</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation).
-				Without the flag, <kbd>plankton</kbd> performs its original analysis as devised by <span class="ref-full">MeyerWW22</span>; feel free to see <kbd>plankton</kbd> fail when omitting the flag.
+				The flag <code class="bash">--new</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation).
+				To have <kbd>plankton</kbd> perform the original analysis devised by <span class="ref-full">MeyerWW22</span>, use the flag <code class="bash">--old</code>.
 			</p>
 			<p>
 				Note that the verification of the LO-tree may take a while:
@@ -333,9 +334,12 @@
   #   is linearizable: YES
   #   time taken (ms): 2483975
   #</pre>
+  		<p>
+  			You may wish run the original version of <kbd>plankton</kbd> from <span class="ref-full">MeyerWW22</span>. Do so as follows:
+  		</p>
+			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old</code></pre>
 			<p>
-				Running <code class="bash">./plankton examples/LO_abstract.pl</code> without the <code class="bash">--pastPrecision</code> flag will result in verification failure.
-				If you do so, you should obtain output along the following lines:
+				You will see an error along the following lines, stating that verification failed:
 			</p>
 			<pre class="bg-light border">
   ...
@@ -409,19 +413,20 @@
 			</ul>
 
 			<p>
-				To analyze the benchmark suite with both versions of <kbd>plankton</kbd>, run the following command (this may take several hours, see below):
+				To analyze the benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may take several hours, see below):
 			</p>
-			<pre class="bg-light border"><code class="bash"> python3 benchmark.py</code></pre>
+			<pre class="bg-light border"><code class="bash"> ./benchmark.sh</code></pre>
 			<p>
-				You can specify the number of times each benchmark should be repeated to average the runtime: <code class="bash">python3 benchmark.py 5</code>, for instance, performs 5 repetitions.
+				You can specify the number of times each benchmark should be repeated to average the runtime: <code class="bash">./benchmark.sh 5</code>, for instance, performs 5 repetitions.
 				By default, the script will execute every benchmark once.
 			</p>
 			<div class="alert alert-warning">
-				We are aware of an issue where the <code>benchmark.py</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
-				The issue is due to Z3 spontaneously misbehaving when used with Python's <code>subprocess</code> library (or pipes in general).
+				We are aware of an issue where the <code>benchmark.sh</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				The issue is due to Z3 spontaneously misbehaving when piping output to a file.
+				We believe the pipe triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
 			</div>
 			<p>
-				After all benchmarks are run, the expected output on an Apply M1 is the following table:
+				After all benchmarks are run, the expected output on an Apple M1 is the following table:
 			</p>
 			<pre class="bg-light border">
   [][][][] ?????????????????</pre>
@@ -547,10 +552,22 @@
 						</td>
 					</tr>
 					<tr>
-						<td class="text-nowrap"><code> --pastPrecision</code></td>
+						<td class="text-nowrap"><code> --old</code></td>
 						<td class="text-center">yes</td>
 						<td class="text-center"><code>false</code></td>
-						<td>Enables temporal interpolation during proof construction, as presented in our paper.</td>
+						<td>Disables temporal interpolation during proof construction, performing hindsight reasoning as presented by <span class="ref-full">MeyerWW22</span>.</td>
+					</tr>
+					<tr>
+						<td class="text-nowrap"><code> --new</code></td>
+						<td class="text-center">yes</td>
+						<td class="text-center"><code>false</code></td>
+						<td>Enables temporal interpolation during proof construction, performing hindsight reasoning as presented in our paper.</td>
+					</tr>
+					<tr>
+						<td class="text-nowrap"><code> --future</code></td>
+						<td class="text-center">yes</td>
+						<td class="text-center"><code>false</code></td>
+						<td>Uses futures to handle unbounded footprints, i.e., updates where that have an effect (physically or ghost) on potentially unboundedly many nodes in the heap.</td>
 					</tr>
 					<tr>
 						<td class="text-nowrap"><code> --no-spurious</code></td>
@@ -640,7 +657,7 @@
 			<p>
 				Helper functions allow code reuse across multiple API functions.
 				Helpers are defined with the keyword <code>inline</code>.
-				They may have an arbitrary return type, including <code>void</code>, <code>int</code>, <code>int</code>, <code>Node*</code> (or pointers to any other declared struct), and comma separated lists of types.
+				They may have an arbitrary return type, including <code>void</code>, <code>int</code>, <code>data_t</code> (treated as alias of <code>int</code>), <code>Node*</code> (or pointers to any other declared struct), and comma separated lists of types.
 			</p>
 			<p>
 				For verification, one can think of helpers being inlined.

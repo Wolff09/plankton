@@ -25,6 +25,9 @@ namespace plankton {
         bool improvePastIncreasedPrecisionForStability = false;
         bool improvePastIncreasedPrecisionForAnnotations = false;
 
+        // future
+        bool useFutures = false;
+
         explicit EngineSetup() = default;
     };
 

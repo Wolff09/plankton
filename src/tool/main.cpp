@@ -40,13 +40,19 @@ inline CommandLineInput Interact(int argc, char** argv) {
     auto isFile = std::make_unique<IsRegularFileConstraint>("_to_input");
     
     TCLAP::SwitchArg casSwitch("", "no-spurious", "Deactivates Compare-and-Swap failing spuriously", cmd, false);
-    // TCLAP::SwitchArg gistSwitch("g", "gist", "Print machine readable gist at the very end", cmd, false);
     TCLAP::UnlabeledValueArg<std::string> programArg("input", "Input file with program code and flow definition", true, "", isFile.get(), cmd);
+    // TCLAP::SwitchArg gistSwitch("g", "gist", "Print machine-readable gist at the very end", cmd, false);
+
+    TCLAP::SwitchArg useFutures("", "future", "Uses futures to handle updates that affect unboundedly many nodes in the heap graph", cmd, false);
+    TCLAP::SwitchArg flagNewMode("", "new", "Uses novel hindsight reasoning (temporal interpolation) from PLDI'23", false);
+    TCLAP::SwitchArg flagOldMode("", "old", "Uses original hindsight reasoning from OOPSLA'22", false);
+    TCLAP::OneOf modeGroup;
+    modeGroup.add(flagNewMode).add(flagOldMode);
+    cmd.add(modeGroup);
 
     TCLAP::SwitchArg loopWidenSwitch("", "loopWiden", "Computes fixed points for loops using a widening, rather than a join", cmd, false);
     TCLAP::SwitchArg loopNoPostJoinSwitch("", "loopNoPostJoin", "Turns off joining loop post annotations", cmd, false);
     TCLAP::SwitchArg macroNoTabulationSwitch("", "macroNoTabulate", "Turns off tabulation of macro post annotations", cmd, false);
-    TCLAP::SwitchArg pastMorePrecise("", "pastPrecision", "Increases the precision when dealing with past predicates (especially during interpolation)", cmd, false);
     TCLAP::ValueArg<std::size_t> loopMaxIterArg("", "loopMaxIter", "Maximal iterations for finding a loop invariant before aborting", false, 23, "integer", cmd);
     TCLAP::ValueArg<std::size_t> proofMaxIterArg("", "proofMaxIter", "Maximal iterations for finding an interference set before aborting", false, 7, "integer", cmd);
 
@@ -55,14 +61,16 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.spuriousCasFail = !casSwitch.getValue();
     // input.printGist = gistSwitch.getValue();
 
+    bool newMode = flagNewMode.getValue() || !flagOldMode.getValue();
     input.setup.loopJoinUntilFixpoint = !loopWidenSwitch.getValue();
     input.setup.loopJoinPost = !loopNoPostJoinSwitch.getValue();
     input.setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
     input.setup.loopMaxIterations = loopMaxIterArg.getValue();
     input.setup.proofMaxIterations = proofMaxIterArg.getValue();
+    input.setup.useFutures = useFutures.getValue();
     input.setup.improvePastIncreasedPrecisionForLinearizability = false;
-    input.setup.improvePastIncreasedPrecisionForStability = pastMorePrecise.getValue();
-    input.setup.improvePastIncreasedPrecisionForAnnotations = pastMorePrecise.getValue();
+    input.setup.improvePastIncreasedPrecisionForStability = newMode;
+    input.setup.improvePastIncreasedPrecisionForAnnotations = newMode;
 
     return input;
 }

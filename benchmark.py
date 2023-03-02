@@ -14,7 +14,7 @@ import sys
 TIMEOUT = 60 * 60 * 6  # in seconds
 REPETITIONS = 1
 
-EXECUTABLE = "./plankton"
+EXECUTABLE = "build/bin/plankton"
 BENCHMARKS = {  # path: [flags]
     "examples/LazySet.pl": [],
     "examples/FineSet.pl": ["--loopNoPostJoin"],
@@ -24,7 +24,7 @@ BENCHMARKS = {  # path: [flags]
     "examples/Michael.pl": [],
     "examples/MichaelWaitFreeSearch.pl": ["--loopNoPostJoin"],
     "examples/Harris.pl": [],
-    "examples/HarrisWaitFreeSearch.pl": [],
+    "examples/HarrisWaitFreeSearch.pl": ["--loopNoPostJoin"],
     # "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
     # "examples/LO_abstract.pl": [""],
 }
