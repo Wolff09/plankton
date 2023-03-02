@@ -145,66 +145,6 @@
 				<a href="https://zenodo.org/record/7686111">https://zenodo.org/record/7686111</a>
 			</p>
 		</div>
-
-
-		<!-- ********************************************************************************** -->
-		<!-- *********************************** QUICKSTART *********************************** -->
-		<!-- ********************************************************************************** -->
-
-		<div class="mt-4">
-			<div class="alert alert-info container">
-				<strong><i class="fas fa-shipping-fast"></i> Quick Start <i class="fas fa-shipping-fast"></i></strong>
-				<ol class="mt-2 mb-2">
-					<li class="mt-1">Install <a target="new" href="https://www.docker.com/">Docker</a>.</li>
-					<li class="mt-1">
-						Get the thing up and running: <br>
-						<pre class="tight"><code class="color">  docker import https://zenodo.org/record/7686111/plankton_docker.tgz
-  docker run -it plankton</code></pre>
-					</li>
-					<li class="mt-1">
-						Check the installation.
-						<ul>
-							<li>
-								Run: <code>./plankton examples/check.pl</code>
-								<br>
-								Expected output: successful verification (no errors).
-								<br>
-								(This concludes the <a href="#started">Getting Started</a> part.)
-							</li> 
-						</ul>
-					</li>
-					<li class="mt-1">
-						Reproduce Claim 1: <i>our new <kbd>plankton</kbd> version can verify the LO-tree</i>.
-						<ul>
-							<li>
-								Run new version: <code>./plankton examples/LO_abstract.pl --pastPrecision</code>
-								<br>
-								Expected output: verification success (linearizability).
-							</li>
-							<li>
-								Run original version: <code>./plankton examples/LO_abstract.pl --pastPrecision</code>
-								<br>
-								Expected output: verification failure (cannot prove linearizability).
-							</li>
-						</ul>
-					</li>
-					<li class="mt-1">
-						Reproduce Claim 2: <i>our new <kbd>plankton</kbd> version can verify all benchmarks from <span class="ref-full">MeyerWW22</span> while being at most 4 times slower than the original version.</i>
-						<ul>
-							<li>
-								Run: <code>python3 benchmark.py</code>
-								<br>
-								Expected output: table comparing the <code>new</code> and <code>old</code> versions as claimed.
-							</li>
-						</ul>
-					</li>
-					<li class="mt-1">
-						<!-- Presto! -->
-						Voil&agrave;!
-					</li>
-				</ol>
-			</div>
-		</div>
 		<br>
 
 
@@ -216,7 +156,7 @@
 			<h1 id="started"><span class="index">A</span> Getting Started</h1>
 			<p>
 				To get the artifact up and running, you may choose between a prebuilt docker image or a docker build script.
-				The prebuilt image supports <strong>amd64</strong> and <strong>arm64</strong> (Apple Silicon) hardware.
+				There are prebuilt images for <strong>x86</strong> and <strong>arm64</strong> (Apple Silicon).
 				The build script is universal.
 			</p>
 
@@ -227,8 +167,8 @@
 			</p>
 			<pre class="bg-light border files">
   https://zenodo.org/record/7686111
-  ├── plankton_amd64.tgz   # prebuilt docker image
-  ├── plankton_arm64.tgz   # prebuilt docker image
+  ├── plankton_x86.tar     # prebuilt docker image
+  ├── plankton_arm64.tar   # prebuilt docker image
   ├── plankton.zip         # source files + docker build script
   └── README.html          # this document</pre>
 			<p>
@@ -237,37 +177,22 @@
 			</p>
 
 			<!-- ********************************* DOCKER IMAGE ********************************* -->
-			<h4>Install Option 1: Docker image (amd64, arm64)</h4>
+			<h4>Install Option 1: Docker image (x86, arm64)</h4>
 			<ol>
 				<li>
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Import directly from Zenodo: <code class="bash">docker import https://zenodo.org/record/7686111/plankton_docker.tgz</code>
-					<br>
-					Alternatively, if you already downloaded the docker container, do: <code class="bash">docker import path/to/plankton_docker.tgz</code>
-				</li>
-				<li>
-					Start the docker image: <code class="bash">docker run -it plankton</code>
-				</li>
-				<li>
-					Done! <a href="#chkinstall">Check the installation</a> now.
-				</li>
-			</ol>
-
-			<!-- *********************************** VM IMAGE *********************************** -->
-			<h4>Install Option 2: VM image (amd64)</h4>
-			<ol>
-				<li>
-					Install a virtual machine player, preferably <a href="https://www.virtualbox.org/">Virtual box</a>.
-				</li>
-				<li>
-					Download the virtual machine image <code>plankton_vm.vdi</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
-				</li>
-				<li>
-					Import the downloaded VM image into the VM player and run it.
-					<br>
-					The username and password for the virtual machine are <code>pldi</code> and <code>123</code>, respectively.
+					<p>
+						Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> using one of the following commands that fits you hardware architecture:
+					</p>
+					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar  # arm64 and Apple Silicon
+  docker import https://zenodo.org/record/7686111/plankton_x86.tar    # or x86</code></pre>
+						If you do not know the architecture of you system, run the command <code>arch</code> in a shell.
+						It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
+						Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties. <b>TODO: check if thats true</b>
+						<br>
+						If you already downloaded the docker image, do <code class="bash">docker import path/to/plankton_&lt;your_arch&gt;.tar</code>.
 				</li>
 				<li>
 					Done! <a href="#chkinstall">Check the installation</a> now.
@@ -281,15 +206,17 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> and unzip, say to this location: <code>path/to/plankton</code>.
+					Download the source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+				</li>
+				<li>
+					Unzip <code>plankton.zip</code>.
+					This results in a folder called <code>plankton</code>.
+					We assume that this folder's location is <code>path/to/plankton</code>.
 				</li>
 				<li>
 					Create a docker instance for the artifact:
 					<pre class="bg-light border"><code class="bash">  cd path/to/plankton
   docker build . -t plankton</code></pre>
-				</li>
-				<li>
-					Start the instance: <code class="bash">docker run -it plankton</code>
 				</li>
 				<li>
 					Done! <a href="#chkinstall">Check the installation</a> now.
@@ -299,10 +226,14 @@
 			<!-- ************************************* CHECK ************************************ -->
 			<h4 id="chkinstall">Check Installation</h4>
 			<p>
-				From within the artifact installation, run this:
+				To run the installed artifact, use an interactive docker shell:
 			</p>
-			<pre class="bg-light border"><code class="bash">  cd /artifact/plankton
-  ./plankton examples/check.pl</code></pre>
+			<pre class="bg-light border"><code class="bash">  docker run -it plankton</code></pre>
+			<p>
+				This will take you to folder <code>/artifact/plankton/</code> within the installed artifact.
+				From there, run this:
+			</p>
+			<pre class="bg-light border"><code class="bash">  ./plankton examples/check.pl</code></pre>
 			<p>
 				This command is expected to finish without errors within a few seconds.
 				At the end of the output, you should see something like this:
@@ -317,14 +248,17 @@
   @gist[../examples/check.pl]=1,7903;</pre>
 			<p>
 				The important part here is that <kbd>plankton</kbd> successfully establishes linearizability.
-				The time it takes to do so may vary depending on your hardware.
+				The time it takes to do so may vary depending on your system.
 				You can ignore the <code>@gist</code> line, it is just an easy-to-parse summary.
+			</p>
+			<p>
+				If the check succeeded, you are ready for the full evaluation! You can fast-forward to the <a href="#eval">step-by-step instructions</a>.
 			</p>
 
 			<!-- ****************************** ARTIFACT STRUCTURE ****************************** -->
 			<h4>Artifact Structure</h4>
 			<p>
-				All three installation methods from above yield an artifact with the following structure:
+				All installation methods from above yield an artifact (docker image) with the following structure:
 			</p>
 			<pre class="bg-light border files">
   /artifact/
@@ -340,7 +274,7 @@
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, a Python script <code>benchmark.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
+				In there is the executable <code>plankton</code>, a Python script <code>benchmark.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was built.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -360,11 +294,11 @@
 			<h1 id="eval"><span class="index">B</span> Step-by-Step Instructions</h1>
 			<p>
 				We show how to reproduce the experiments from the submitted version of our paper (<a href="#claim1">Claim 1</a>).
-				Moreover, we show hot how to produce additional experimental results (<a href="#claim2">Claim 2</a>) that we will add to the camera-ready version, as requested by the reviewers.
+				Moreover, we show how to produce additional experimental results (<a href="#claim2">Claim 2</a>) that we will add to the camera-ready version, as per the reviewers' request.
 			</p>
-			<p>
-				If you do not have the artifact running anymore, do: <code>docker run -it plankton</code>.
-			</p>
+			<div class="alert alert-info">
+				If you do not have the artifact running anymore, fire it up: <code>docker run -it plankton</code>
+			</div>
 
 			<!-- ************************************ LO TREE *********************************** -->
 			<h4 id="claim1">Claim 1: Verifying the LO-tree</h4>
@@ -376,18 +310,17 @@
 			<p>
 				To repeat the verification, run the following command:
 			</p>
-			<pre class="bg-light border"><code class="bash">  cd /artifact/plankton
-  ./plankton examples/LO_abstract.pl --pastPrecision</code></pre>
+			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_abstract.pl --pastPrecision</code></pre>
 			<p>
-				The flag <code class="bash">--pastPrecision</code> instructs <kbd>plankton</kbd> to use our novel temporal interpolation.
+				The flag <code class="bash">--pastPrecision</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation).
 				Without the flag, <kbd>plankton</kbd> performs its original analysis as devised by <span class="ref-full">MeyerWW22</span>; feel free to see <kbd>plankton</kbd> fail when omitting the flag.
 			</p>
 			<p>
 				Note that the verification of the LO-tree may take a while:
 				about 40m on an Apple M1 Pro or about 60m on an Intel i5-8600K.
 				<b>SAME AS IN PAPER?</b>
-				While <kbd>plankton</kbd> is running, it will output the current status.
-				Once finished, <kbd>plankton</kbd> will output the verdict and time taken, e.g.:
+				<!-- While <kbd>plankton</kbd> is running, it will output the current status. -->
+				Once finished, <kbd>plankton</kbd> will print the verdict and time taken, e.g.:
 			</p>
 			<pre class="bg-light border">
   ...
@@ -410,9 +343,10 @@
 
   ERROR: Could not establish linearizability for function 'contains'.</pre>
 
+  		<p><i>This concludes reproducing the claim.</i></p>
 			<p>
 				While <kbd>plankton</kbd> is constructing a proof, its output informs you of the current status.
-				This includes (i) the iteration of the overall fixed point that is being computed, (ii) the function that is being analyzed, (iii) the command being handled, (iv) loops for which a (nested) fixed point is computed, and (v) macros that are invoked.
+				This includes (i) the iteration of the overall fixed point that is being computed, (ii) the function that is being analyzed, (iii) the command being handled, (iv) loops for which a loop invariant is computed, and (v) macros that are invoked.
 				For an example, consider this output snippet:
 			</p>
 			<pre class="bg-light border">
@@ -423,9 +357,9 @@
   [iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
   ...</pre>
 			<p>
-				Here <kbd>plankton</kbd> is (i) in the 1st iteration for (ii) function <code>contains</code>, handling (iii) commands <code>c_1 = y_1->left</code> followed by <code>assume(k_1 >= y_1->key)</code> during the (iv) 2nd iteration of a fixed point for finding a loop in macro (v) <code>traverse</code> called from within another macro <code>locate</code>.
-				After each command, <kbd>plankton</kbd> makes that the resulting proof state (a separation logic assertion) stable under interference (cf. end of Section 3 in the paper).
-				The numbers in parentheses at the end of line indicates the number of distinct <i>proof branches</i> reach this location; the branches are interpreted disjunctively.
+				Here <kbd>plankton</kbd> is (i) in the 1st iteration for (ii) function <code>contains</code>, handling (iii) commands <code>c_1 = y_1->left</code> followed by <code>assume(k_1 >= y_1->key)</code> during the (iv) 2nd iteration of a fixed point for finding a loop invariant in macro (v) <code>traverse</code>.
+				After each command, <kbd>plankton</kbd> makes the resulting proof state (a separation logic assertion) stable under interference (cf. end of Section 3 in the paper).
+				The numbers in parentheses at the end of each line indicate the number of distinct <i>proof branches</i> that reach this location; the branches are interpreted disjunctively.
 			</p>
 
 			<!-- ********************************** COMPARISON ********************************** -->
@@ -483,7 +417,7 @@
 				By default, the script will execute every benchmark once.
 			</p>
 			<div class="alert alert-warning">
-				There is a known issue where the <code>benchmark.py</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				We are aware of an issue where the <code>benchmark.py</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
 				The issue is due to Z3 spontaneously misbehaving when used with Python's <code>subprocess</code> library (or pipes in general).
 			</div>
 			<p>
@@ -960,8 +894,7 @@
 		<!-- *********************************** REFERENCES *********************************** -->
 		<!-- ********************************************************************************** -->
 		<div id="references" class="mt-4">
-			<br>
-			<h1>References</h1>
+			<h1><span class="index">&nbsp;</span> References</h1>
 			<div class="ref-item" data-ref-full="Drachsler et al. 2018", data-ref-year="2014">
 				<span class="ref-item-id">DrachslerVY14</span>
 				<span class="ref-item-author">Dana Drachsler, Martin Vechev, and Eran Yahav. 2014.</span>
