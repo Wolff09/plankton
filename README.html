@@ -73,6 +73,20 @@
 			padding: 0 .2rem;
 		}
 
+		.badge.full {
+			color: #146C43;
+			background-color: #d1e7dd;
+			border: 1px solid #a3cfbb;
+		}
+		.badge.reduced {
+			color: #0a58ca;
+			background-color: #cfe2ff;
+			border: 1px solid #9ec5fe;
+			/*color: #997404;
+			background-color: #fff3cd;
+			border: 1px solid #ffe69c;*/
+		}
+
 		pre {
 			padding-top: .5rem;
 			padding-bottom: .5rem;
@@ -183,16 +197,18 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					<p>
-						Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a> using <b>one</b> of the following commands that fits you hardware architecture:
-					</p>
-					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar  # arm64 including Apple Silicon
-  docker import https://zenodo.org/record/7686111/plankton_x86.tar    # or x86</code></pre>
-						If you do not know the architecture of you system, run the command <code>arch</code> in a shell.
-						It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
-						Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties. <b>TODO: check if thats true</b>
-						<br>
-						If you already downloaded the docker image, do <code class="bash">docker import path/to/plankton_&lt;your_arch&gt;.tar</code>.
+					Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+					If you are on <strong>arm64</strong> (this includes Apple Silicon), do:
+					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar</code></pre>
+					If you are on <strong>x86</strong>, do:
+					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_x86.tar</code></pre>
+
+					If you already downloaded the docker image, do <code class="bash">docker import path/to/plankton_&lt;your_arch&gt;.tar</code>.
+
+					<br>
+					In case you do not know the architecture of you system, run the command <code>arch</code> or <code>uname -m</code> in a shell.
+					It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
+					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties. <b>TODO: check if thats true</b>
 				</li>
 				<li>
 					Done! <a href="#chkinstall">Check the installation</a> now.
@@ -268,6 +284,7 @@
   │   │   └── ...
   │   ├── plankton
   │   ├── benchmark.sh
+  │   ├── reduced.sh
   │   └── prettyprint.py
   ├── plankton-debug/
   │   └── ...
@@ -275,7 +292,7 @@
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, a shell script <code>benchmark.sh</code> for the <a href="#eval">step-by-step instructions</a>, a Python script <code>prettyprint.py</code> used by <code>benchmark.sh</code>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
+				In there is the executable <code>plankton</code>, shell scripts <code>benchmark.sh</code> and <code>reduced.sh</code> for the <a href="#eval">step-by-step instructions</a>, a Python script <code>prettyprint.py</code> used by the aforementioned shell scripts, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -373,53 +390,100 @@
 				<strong>Central claim</strong>:
 				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down (factor 2-4 slower).
 			</p>
-			<p>The benchmark set of <span class="ref-full">MeyerWW22</span> consists of the following implementations:
+			<p>The <span class="badge full">full</span> (and <span class="badge reduced">reduced</span>) benchmark set of <span class="ref-full">MeyerWW22</span> consists of the following implementations:
 			</p>
 			<ul>
 				<li>
 					<i>Fine-grained set</i> <span class="ref-full">HerlihyS08</span>:
-					<br>
+					&nbsp;
 					<code>examples/FineSet.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>Lazy set</i> <span class="ref-full">HellerHLMSS05</span>:
-					<br>
+					&nbsp;
 					<code>examples/LazySet.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>FEMRS tree (no maintenance)</i> <span class="ref-full">FeldmanEMRS18</span>:
-					<br>
+					&nbsp;
 					<code>examples/FemrsTreeNoMaintenance.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
-					<i>Vechev&Yahav's DCAS set</i> and <i>CAS set</i> <span class="ref-full">VechevY08</span>:
-					<br>
-					<code>examples/VechevYahavDCAS.pl</code> and <code>examples/VechevYahavCAS.pl</code>
+					<i>Vechev&Yahav's DCAS set</i>:
+					&nbsp;
+					<code>examples/VechevYahavDCAS.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+				</li>
+				<li>
+					<i>Vechev&Yahav's CAS set</i> <span class="ref-full">VechevY08</span>:
+					&nbsp;
+					<code>examples/VechevYahavCAS.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>ORVYY's set</i> <span class="ref-full">OHearnRVYY10</span>:
-					<br>
+					&nbsp;
 					<code>examples/ORVYY.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
-					<i>Michael's set</i> <span class="ref-full">Michael02</span> and a variation:
-					<br>
-					<code>examples/Michael.pl</code> and <code>examples/MichaelWaitFreeSearch.pl</code>
+					<i>Michael's set</i> <span class="ref-full">Michael02</span>:
+					&nbsp;
+					<code>examples/Michael.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
-					<i>Harris' set</i> <span class="ref-full">Harris01</span> and a variation:
-					<br>
-					<code>examples/Harris.pl</code> and <code>examples/HarrisWaitFreeSearch.pl</code>
+					<i>variation of Michael's set</i> <span class="ref-full">Michael02</span>:
+					&nbsp;
+					<code>examples/MichaelWaitFreeSearch.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+				</li>
+				<li>
+					<i>Harris' set</i> <span class="ref-full">Harris01</span>:
+					&nbsp;
+					<code>examples/Harris.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
+				</li>
+				<li>
+					<i>Harris' set</i> <span class="ref-full">Harris01</span>:
+					&nbsp;
+					<code>examples/HarrisWaitFreeSearch.pl</code>
+					&nbsp;
+					<span class="badge full">full</span>
 				</li>
 			</ul>
 
 			<p>
-				To analyze the benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may take several hours, see below):
+				To analyze the <span class="badge full">full</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may take several hours, see below):
 			</p>
 			<pre class="bg-light border"><code class="bash"> ./benchmark.sh</code></pre>
 			<p>
-				You can specify the number of times each benchmark should be repeated to average the runtime: <code class="bash">./benchmark.sh 5</code>, for instance, performs 5 repetitions.
-				By default, the script will execute every benchmark once.
+				To analyze the <span class="badge reduced">reduced</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may still take long, see below):
+			</p>
+			<pre class="bg-light border"><code class="bash"> ./reduced.sh</code></pre>
+			<p>
+				For both scripts, you can specify the number of times each benchmark should be repeated to average the runtime, e.g.: <code class="bash">./benchmark.sh 5</code> performs 5 repetitions.
+				By default, the scripts will execute every benchmark once.
+				The scripts will write log files to a folder named <code>logs</code> should you desire to inspect the output <kbd>plankton</kbd> generates for the benchmark set.
+				The folder will be overwritten every time you run one of the scripts.
 			</p>
 			<div class="alert alert-warning">
 				We are aware of an issue where the <code>benchmark.sh</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.

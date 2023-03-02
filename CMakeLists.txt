@@ -41,5 +41,6 @@ add_subdirectory(src)
 
 # installation
 install(PROGRAMS benchmark.sh DESTINATION ${INSTALL_FOLDER})
+install(PROGRAMS reduced.sh DESTINATION ${INSTALL_FOLDER})
 install(FILES prettyprint.py DESTINATION ${INSTALL_FOLDER})
 install(DIRECTORY examples DESTINATION ${INSTALL_FOLDER})
