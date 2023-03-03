@@ -24,10 +24,10 @@ BENCHMARKS = {  # path: [flags]
     "examples/VechevYahavCas.pl": [],
     "examples/ORVYY.pl": [],
     "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
-    "examples/Michael.pl": [],
+    "examples/Michael.pl": ["--loopNoPostJoin"],
     "examples/MichaelWaitFreeSearch.pl": [],
-    "examples/Harris.pl": [],
-    "examples/HarrisWaitFreeSearch.pl": [],
+    "examples/Harris.pl": ["--future"],
+    "examples/HarrisWaitFreeSearch.pl": ["--future"],
     # "examples/LO_abstract.pl": [""],
 }
 WIDTH = 40
