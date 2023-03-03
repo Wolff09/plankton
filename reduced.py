@@ -20,14 +20,14 @@ BENCHMARKS = {  # path: [flags]
     # "examples/check.pl": [],
     "examples/FineSet.pl": [],
     "examples/LazySet.pl": [],
-    "examples/VechevYahavDCas.pl": ["--loopNoPostJoin"],
+    # "examples/VechevYahavDCas.pl": ["--loopNoPostJoin"],
     "examples/VechevYahavCas.pl": [],
     "examples/ORVYY.pl": [],
     "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
     "examples/Michael.pl": ["--loopNoPostJoin"],
-    "examples/MichaelWaitFreeSearch.pl": [],
-    "examples/Harris.pl": ["--future"],
-    "examples/HarrisWaitFreeSearch.pl": ["--future"],
+    # "examples/MichaelWaitFreeSearch.pl": [],
+    # "examples/Harris.pl": ["--future"],
+    # "examples/HarrisWaitFreeSearch.pl": ["--future"],
     # "examples/LO_abstract.pl": [""],
 }
 WIDTH = 40
