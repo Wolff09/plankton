@@ -18,6 +18,10 @@ struct CommandLineInput {
     bool spuriousCasFail = false;
     // bool printGist = false;
     EngineSetup setup;
+
+    bool newMode = true;
+    bool logToFile = false;
+    std::ofstream logFile;
 };
 
 struct IsRegularFileConstraint : public TCLAP::Constraint<std::string> {
@@ -50,6 +54,8 @@ inline CommandLineInput Interact(int argc, char** argv) {
     modeGroup.add(flagNewMode).add(flagOldMode);
     cmd.add(modeGroup);
 
+    TCLAP::ValueArg<std::string> outputPath("o", "output", "Log file to write all output to", false, "", "path", cmd);
+
     TCLAP::SwitchArg loopWidenSwitch("", "loopWiden", "Computes fixed points for loops using a widening, rather than a join", cmd, false);
     TCLAP::SwitchArg loopNoPostJoinSwitch("", "loopNoPostJoin", "Turns off joining loop post annotations", cmd, false);
     TCLAP::SwitchArg macroNoTabulationSwitch("", "macroNoTabulate", "Turns off tabulation of macro post annotations", cmd, false);
@@ -61,7 +67,7 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.spuriousCasFail = !casSwitch.getValue();
     // input.printGist = gistSwitch.getValue();
 
-    bool newMode = flagNewMode.getValue() || !flagOldMode.getValue();
+    input.newMode = flagNewMode.getValue() || !flagOldMode.getValue();
     input.setup.loopJoinUntilFixpoint = !loopWidenSwitch.getValue();
     input.setup.loopJoinPost = !loopNoPostJoinSwitch.getValue();
     input.setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
@@ -69,8 +75,15 @@ inline CommandLineInput Interact(int argc, char** argv) {
     input.setup.proofMaxIterations = proofMaxIterArg.getValue();
     input.setup.useFutures = useFutures.getValue();
     input.setup.improvePastIncreasedPrecisionForLinearizability = false;
-    input.setup.improvePastIncreasedPrecisionForStability = newMode;
-    input.setup.improvePastIncreasedPrecisionForAnnotations = newMode;
+    input.setup.improvePastIncreasedPrecisionForStability = input.newMode;
+    input.setup.improvePastIncreasedPrecisionForAnnotations = input.newMode;
+
+    if (outputPath.isSet()) {
+        input.logFile.open(outputPath.getValue());
+        input.logToFile = true;
+        LogStream::SetOut(input.logFile);
+        LogStream::SetErr(input.logFile);
+    }
 
     return input;
 }
@@ -110,6 +123,14 @@ inline VerificationResult Verify(const ParsingResult& input, const EngineSetup& 
 // Reporting
 //
 
+inline void PrintInfo(const CommandLineInput& cmd) {
+    if (!cmd.logToFile) return;
+    INFO(cmd.pathToInput << std::endl)
+    if (cmd.newMode) INFO("new" << std::endl)
+    else INFO("old" << std::endl)
+    INFO("#########################" << std::endl << std::endl)
+}
+
 inline void PrintInput(const ParsingResult& input) {
     assert(input.program);
     assert(input.config);
@@ -141,6 +162,7 @@ int main(int argc, char** argv) {
     try {
         auto cmd = Interact(argc, argv);
         auto input = Parse(cmd);
+        PrintInfo(cmd);
         PrintInput(input);
         auto result = Verify(input, cmd.setup);
         PrintResult(cmd, input, result);

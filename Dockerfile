@@ -4,6 +4,9 @@
 FROM ubuntu:22.04 as base
 ARG DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 RUN apt update && apt -y --no-install-recommends install \
+        less \
+        nano \
+        zsh \
         make \
         cmake \
         git \
@@ -54,4 +57,4 @@ RUN make install
 #
 FROM release
 WORKDIR /artifact/plankton/
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/bin/zsh" ]
