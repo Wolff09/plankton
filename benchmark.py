@@ -201,9 +201,9 @@ def finalize():
     print()
     print()
     width = max([len(x) for x in BENCHMARKS]) + 3
-    header = "{:<" + str(width) + "} | {:<9} | {:>15} | {:>6} "
+    header = " {:<" + str(width) + "} | {:>8} | {:>15} | {:>6} "
     print(header.format("Program", "Analysis", "Linearizable", "Factor"))
-    print(("-" * width) + "-+-----------+-----------------+--------")
+    print(("-" * width) + "--+----------+-----------------+--------")
     some_failed = False
     for path in BENCHMARKS:
         good_old, total_old = get_values(path, False)
