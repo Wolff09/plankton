@@ -5,8 +5,8 @@ FROM ubuntu:22.04 as base
 ARG DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC
 RUN apt update && apt -y --no-install-recommends install \
         less \
+        wget \
         nano \
-        zsh \
         make \
         cmake \
         git \
@@ -22,6 +22,7 @@ RUN apt update && apt -y --no-install-recommends install \
         libc++abi1 \
         libc++abi-dev \
     && rm -rf /var/lib/apt/lists/*
+RUN echo "PS1='\[\e[0;1;34;47m\]# \[\e[0;1;34;47m\]\w \[\e[0;1;31;47m\]$\[\e[0m\] '" > ~/.bashrc
 ENV CC clang
 ENV CXX clang++
 
@@ -57,4 +58,4 @@ RUN make install
 #
 FROM release
 WORKDIR /artifact/plankton/
-ENTRYPOINT [ "/bin/zsh" ]
+ENTRYPOINT [ "/bin/bash" ]

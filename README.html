@@ -197,18 +197,17 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Import the the docker image directly from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
-					If you are on <strong>arm64</strong> (this includes Apple Silicon), do:
-					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_arm64.tar</code></pre>
-					If you are on <strong>x86</strong>, do:
-					<pre class="bg-light border"><code class="bash">  docker import https://zenodo.org/record/7686111/plankton_x86.tar</code></pre>
-
-					If you already downloaded the docker image, do <code class="bash">docker import path/to/plankton_&lt;your_arch&gt;.tar</code>.
-
+					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar</code> that fits your hardware from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+					We provide images for <strong>arm64</strong> (this includes Apple Silicon) and 64bit <strong>x86</strong>; for other hardware architectures, you need to <a href="#dbuild">build the Docker image yourself.</a>
+					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties.
+					
 					<br>
 					In case you do not know the architecture of you system, run the command <code>arch</code> or <code>uname -m</code> in a shell.
 					It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
-					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties. <b>TODO: check if thats true</b>
+				</li>
+				<li>
+					Load the downloaded image into Docker:
+					<pre class="bg-light border"><code class="bash">  docker load -i path/to/plankton_&lt;your_arch&gt;.tar</code></pre>
 				</li>
 				<li>
 					Done! <a href="#chkinstall">Check the installation</a> now.
@@ -216,7 +215,7 @@
 			</ol>
 
 			<!-- ********************************* DOCKER SCRIPT ******************************** -->
-			<h4>Install Option 3: Docker build script (universal)</h4>
+			<h4 id="dbuild">Install Option 3: Docker build script (universal)</h4>
 			<ol>
 				<li>
 					Install <a href="https://www.docker.com/">Docker</a>.
@@ -283,16 +282,15 @@
   │   ├── source/
   │   │   └── ...
   │   ├── plankton
-  │   ├── benchmark.sh
-  │   ├── reduced.sh
-  │   └── prettyprint.py
+  │   ├── benchmark.py
+  │   └── reduced.py
   ├── plankton-debug/
   │   └── ...
   └── z3/
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, shell scripts <code>benchmark.sh</code> and <code>reduced.sh</code> for the <a href="#eval">step-by-step instructions</a>, a Python script <code>prettyprint.py</code> used by the aforementioned shell scripts, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
+				In there is the executable <code>plankton</code>, Python scripts <code>benchmark.py</code> and <code>reduced.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -330,14 +328,8 @@
 			</p>
 			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --new</code></pre>
 			<p>
-				The flag <code class="bash">--new</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation).
-				To have <kbd>plankton</kbd> perform the original analysis devised by <span class="ref-full">MeyerWW22</span>, use the flag <code class="bash">--old</code>.
-			</p>
-			<p>
 				Note that the verification of the LO-tree may take a while:
 				about 20 minutes on an Apple M1 Pro or about <b>?????</b> minutes on an Intel i5-8600K.
-				<b>SAME AS IN PAPER?</b>
-				<!-- While <kbd>plankton</kbd> is running, it will output the current status. -->
 				Once finished, <kbd>plankton</kbd> will print the verdict and time taken, e.g.:
 			</p>
 			<pre class="bg-light border">
@@ -352,12 +344,13 @@
   #   time taken (ms): 2483975
   #</pre>
   		<p>
-  			You may wish run the original version of <kbd>plankton</kbd> from <span class="ref-full">MeyerWW22</span>. Do so as follows:
+				The flag <code class="bash">--new</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation from our paper).
+				To have <kbd>plankton</kbd> perform the original analysis devised by <span class="ref-full">MeyerWW22</span>, use the flag <code class="bash">--old</code> instead:
   		</p>
 			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old</code></pre>
 			<p>
 				This will take about <b>?????</b> minutes on an Apple M1 Pro or about <b>?????</b> minutes on an Intel i5-8600K.
-				In the end, you will see an error along the following lines, stating that verification failed:
+				In the end, you will see an error along the following lines, stating that verification failed (to be clear: this is the expected behavior for <code>--old</code>):
 			</p>
 			<pre class="bg-light border">
   ...
@@ -390,7 +383,11 @@
 				<strong>Central claim</strong>:
 				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down (factor 2-4 slower).
 			</p>
-			<p>The <span class="badge full">full</span> (and <span class="badge reduced">reduced</span>) benchmark set of <span class="ref-full">MeyerWW22</span> consists of the following implementations:
+
+			<p>
+				The <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span> consists of 10 data structure implementations and may take several ours (<b>???</b>h to <b>???</b>h, see below).
+				To reduce the time commitment, we include  <span class="badge reduced">reduced</span> benchmark set&mdash;it may still take long (<b>???</b>h to <b>???</b>h, see below).
+				The benchmark sets consists of the following implementations from <span class="ref-full">MeyerWW22</span>:
 			</p>
 			<ul>
 				<li>
@@ -472,23 +469,21 @@
 			</ul>
 
 			<p>
-				To analyze the <span class="badge full">full</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may take several hours, see below):
+				To analyze the <span class="badge full">full</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script:
 			</p>
-			<pre class="bg-light border"><code class="bash"> ./benchmark.sh</code></pre>
+			<pre class="bg-light border"><code class="bash">  python3 benchmark.py</code></pre>
 			<p>
-				To analyze the <span class="badge reduced">reduced</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script (this may still take long, see below):
+				To analyze the <span class="badge reduced">reduced</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script:
 			</p>
-			<pre class="bg-light border"><code class="bash"> ./reduced.sh</code></pre>
+			<pre class="bg-light border"><code class="bash">  python3 reduced.py</code></pre>
 			<p>
 				For both scripts, you can specify the number of times each benchmark should be repeated to average the runtime, e.g.: <code class="bash">./benchmark.sh 5</code> performs 5 repetitions.
 				By default, the scripts will execute every benchmark once.
-				The scripts will write log files to a folder named <code>logs</code> should you desire to inspect the output <kbd>plankton</kbd> generates for the benchmark set.
-				The folder will be overwritten every time you run one of the scripts.
 			</p>
 			<div class="alert alert-warning">
-				We are aware of an issue where the <code>benchmark.sh</code> scrip will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
-				The issue is due to Z3 spontaneously misbehaving when piping output to a file.
-				We believe the pipe triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
+				We are aware of an issue where the <code>benchmark.py</code> and <code>reduced.py</code> scripts will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				The issue is due to Z3 spontaneously misbehaving when run with Python's <code>subprocess</code> module.
+				We believe that this triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
 			</div>
 			<p>
 				After all benchmarks are run, the expected output on an Apple M1 is the following table:
@@ -501,26 +496,10 @@
 			<pre class="bg-light border">
   [][][][] ?????????????????</pre>
 			<p>
-				Here, we are concerned only with the last column of the table, which is the verification verdict and the overall time it took.
-				We stress that absolute running times vary from system to system.
-				The thing to note is that both the <code>old</code> and <code>new</code> versions verify the same implementations and that the <code>new</code> version is at most 4 times slower.
+				Here, we are mainly concerned with the last column of the table, the relative cost of our <code>--new</code> analysis compared to the <code>--old</code> one.
+				As stated before, we expect <code>--new</code> to take at most four times as long as <code>--old</code> (i.e., the factor should always be less or equal to 4).
+				We stress that the absolute running times vary from system to system.
 			</p>
-			<p>
-				The meaning of the columns is as follows <span class="ref-full">MeyerWW22</span>:
-			</p>
-			<ul>
-				<li><i>Program: </i>the name of the example program,</li>
-				<li><i>Version:</i> <code>old</code> refers to the original version due to <span class="ref-full">MeyerWW22</span> and <code>new</code> refers to our extension,</li>
-				<li><i>Iter:</i> number of iterations until interferences (effects) are saturated,</li>
-				<li><i>Eff:</i> number of interference effects,</li>
-				<li><i>Cand:</i> number of future candidates,</li>
-				<li><i>Com:</i> percentage of overall runtime spent for handling atomic commands,</li>
-				<li><i>Fut:</i> percentage of overall runtime spent for future reasoning,</li>
-				<li><i>Hist:</i> percentage of overall runtime spent for history reasoning,</li>
-				<li><i>Join:</i> percentage of overall runtime spent for the join operation,</li>
-				<li><i>Inter:</i> percentage of overall runtime spent for applying interferences, and</li>
-				<li><i>Linearizability:</i> linearizability verdict and time in seconds to generate it (i.e. a proof thereof).</li>
-			</ul>
 
 			<p>
 				<i>This concludes artifact evaluation.</i>
