@@ -489,7 +489,28 @@
 				After all benchmarks are run, the expected output on an Apple M1 is the following table:
 			</p>
 			<pre class="bg-light border">
-  [][][][] ?????????????????</pre>
+Program                               | Analysis  |    Linearizable | Factor 
+--------------------------------------+-----------+-----------------+--------
+examples/LazySet.pl                   | --old     |         1m24s ✓ |        
+                                      | --new     |         2m13s ✓ |  ×1.58 
+examples/FineSet.pl                   | --old     |         0m47s ✓ |        
+                                      | --new     |         0m44s ✓ |  ×0.94 
+examples/VechevYahavDCas.pl           | --old     |         1m09s ✓ |        
+                                      | --new     |         1m15s ✓ |  ×1.08 
+examples/VechevYahavCas.pl            | --old     |         0m52s ✓ |        
+                                      | --new     |         2m20s ✓ |  ×2.70 
+examples/ORVYY.pl                     | --old     |         0m54s ✓ |        
+                                      | --new     |         1m36s ✓ |  ×1.79 
+examples/FemrsTreeNoMaintenance.pl    | --old     |         2m22s ✓ |        
+                                      | --new     |         3m50s ✓ |  ×1.62 
+examples/Michael.pl                   | --old     |         3m06s ✓ |        
+                                      | --new     |         6m54s ✓ |  ×2.22 
+examples/MichaelWaitFreeSearch.pl     | --old     |         3m43s ✓ |        
+                                      | --new     |         6m56s ✓ |  ×1.87 
+examples/Harris.pl                    | --old     |        18m19s ✓ |        
+                                      | --new     |        57m16s ✓ |  ×3.13 
+examples/HarrisWaitFreeSearch.pl      | --old     |        20m02s ✓ |        
+                                      | --new     |        43m22s ✓ |  ×2.16</pre>
 			<p>
 				For comparison, the expected output on an Intel i5-8600K is this:
 			</p>
