@@ -1,4 +1,5 @@
 #include <chrono>
+#include <ctime>
 #include "tclap/CmdLine.h"
 #include "cfg2string.hpp"
 #include "engine/linearizability.hpp"
@@ -126,8 +127,10 @@ inline VerificationResult Verify(const ParsingResult& input, const EngineSetup& 
 inline void PrintInfo(const CommandLineInput& cmd) {
     if (!cmd.logToFile) return;
     INFO(cmd.pathToInput << std::endl)
-    if (cmd.newMode) INFO("new" << std::endl)
-    else INFO("old" << std::endl)
+    if (cmd.newMode) INFO("--new" << std::endl)
+    else INFO("--old" << std::endl)
+    auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    INFO(std::ctime(&now))
     INFO("#########################" << std::endl << std::endl)
 }
 

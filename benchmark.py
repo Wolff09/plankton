@@ -212,8 +212,6 @@ def fmt(string, width, formatter=default):
 
 
 def finalize():
-    if not STARTED:
-        return
     print()
     print()
     width = max([len(x) for x in BENCHMARKS]) + 3
@@ -284,9 +282,12 @@ def claim2():
     print("CLAIM 2: comparison of '--old' and '--new'")
     print("==========================================")
     print()
-    print("Settings: iterations={0}, timeout={1}".format(REPETITIONS, human_readable(TIMEOUT*1000)))
-    print("Running benchmarks...")
+    if BENCHMARKS == FULL:
+        print("Running " + bold("full") + " benchmark set...")
+    else:
+        print("Running " + bold("reduced") + " benchmark set...")
     print()
+    print("Settings: iterations={0}, timeout={1}".format(REPETITIONS, human_readable(TIMEOUT*1000)))
     for i in range(REPETITIONS):
         for path in BENCHMARKS:
             result_old = run_test_old(path, i)
@@ -317,12 +318,19 @@ if __name__ == '__main__':
 
     try:
         claim1()
-        print()
-        print()
-        STARTED = False
+    except KeyboardInterrupt:
+        print("", flush=True)
+        print("", flush=True)
+        print("[interrupted]", flush=True)
+        exit(1)
+
+    print()
+    print()
+    try:
         claim2()
     except KeyboardInterrupt:
         print("", flush=True)
         print("", flush=True)
         print("[interrupted]", flush=True)
-    finalize()
+        finalize()
+        exit(1)
