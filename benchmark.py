@@ -28,9 +28,11 @@ BENCHMARKS = {  # path: [flags]
     "examples/MichaelWaitFreeSearch.pl": [],
     "examples/Harris.pl": ["--future"],
     "examples/HarrisWaitFreeSearch.pl": ["--future"],
-    # "examples/LO_abstract.pl": [""],
+    # "examples/LO_abstract.pl": [],
 }
+LOTREE = ("examples/LO_abstract.pl", [])
 WIDTH = 40
+STARTED = False
 
 #
 # CONFIGURATION end
@@ -142,26 +144,30 @@ def extract_info(output):
     return Result(total, iters, eff, can, com, fut, hist, join, inter)
 
 
-def run_with_timeout(path, mode):
+def run_with_timeout_to_file(path, mode, file):
     if path not in BENCHMARKS:
         raise NameError("Internal error: could not find benchmark file '" + path + "'")
     flags = BENCHMARKS.get(path)
+    all_args = [EXECUTABLE, path] + flags + [mode] + ["-o " + file.name]
 
-    with NamedTemporaryFile(mode='r', delete=True) as tmp:
-        all_args = [EXECUTABLE, path] + flags + [mode] + ["-o " + tmp.name]
-        # make sure to properly kill subprocesses after timeout
-        # see: https://stackoverflow.com/questions/36952245/subprocess-timeout-failure
-        with Popen(all_args, preexec_fn=os.setsid) as process:
-            try:
-                process.communicate(timeout=TIMEOUT)
-                if process.returncode == 0:
-                    output = "".join(tmp.readlines())
-                else:
-                    output = "__fail__"  # TODO: allow error message extraction
-            except TimeoutExpired:
-                os.killpg(process.pid, signal.SIGINT)
-                output = "__to__"
+    # make sure to properly kill subprocesses after timeout
+    # see: https://stackoverflow.com/questions/36952245/subprocess-timeout-failure
+    with Popen(all_args, preexec_fn=os.setsid) as process:
+        try:
+            process.communicate(timeout=TIMEOUT)
+            if process.returncode == 0:
+                output = "".join(file.readlines())
+            else:
+                output = "__fail__"  # TODO: allow error message extraction
+        except TimeoutExpired:
+            os.killpg(process.pid, signal.SIGINT)
+            output = "__to__"
     return output
+
+
+def run_with_timeout(path, mode):
+    with NamedTemporaryFile(mode='r', delete=True) as tmp:
+        return run_with_timeout_to_file(path, mode, tmp)
 
 
 def run_test(path, i, mode):
@@ -198,6 +204,8 @@ def fmt(string, width, formatter=default):
 
 
 def finalize():
+    if not STARTED:
+        return
     print()
     print()
     width = max([len(x) for x in BENCHMARKS]) + 3
@@ -231,10 +239,49 @@ def finalize():
         print("      Try invoking plankton directly (without pipes), e.g.: {0} path/to/benchmark".format(EXECUTABLE))
 
 
-def main():
+def claim1():
+    print("CLAIM 1: verification of the LO-tree")
+    print("====================================")
+    print()
+    print()
+    log_old, log_new = "<unknown>", "<unknown>"
+    with open("LO_old.txt", 'r') as file:
+        log_old = file.name
+        print("Running --old {}  ".format(LOTREE), flush=True, end="")
+        output_old = run_with_timeout_to_file(LOTREE, "--old", file)
+        result_old = extract_info(output_old)
+        if result_old.success:
+            print(result_old.info, flush=True)
+        else:
+            print(result_old.info, flush=True)
+    with open("LO_new.txt", 'r') as file:
+        log_new = file.name
+        print("Running --new {}  ".format(LOTREE), flush=True, end="")
+        output_new = run_with_timeout_to_file(LOTREE, "--new", file)
+        result_new = extract_info(output_old)
+        if result_new.success:
+            print(result_new.info, flush=True)
+        else:
+            print(err(result_new.info), flush=True)
+    print()
+    old_expected = "failure"
+    old_actual = good("failure ✓") if not result_old.success else err("success ✗")
+    new_expected = "success"
+    new_actual = good("success ✓") if not result_old.success else err("failure ✗")
+    print("Log files have been written to {} and {}.".format(log_old, log_new))
+    print("Expected result for '--old' analysis: {}. Actual result: {}".format(old_expected, old_actual))
+    print("Expected result for '--new' analysis: {}. Actual result: {}".format(new_expected, new_actual))
+    
+
+
+def claim2():
+    print("CLAIM 2: comparison of '--old' and '--new'")
+    print("==========================================")
+    print()
     print("Settings: iterations={0}, timeout={1}".format(REPETITIONS, human_readable(TIMEOUT*1000)))
     print("Running benchmarks...")
     print()
+    STARTED = True
     for i in range(REPETITIONS):
         for path in BENCHMARKS:
             result_old = run_test_old(path, i)
@@ -242,6 +289,14 @@ def main():
             result_new = run_test_new(path, i)
             RESULTS[(path, "new")] = RESULTS.get((path, "new"), []) + [result_new]
     finalize()
+
+
+def main():
+    STARTED = False
+    claim1()
+    print()
+    print()
+    claim2()
 
 
 if __name__ == '__main__':

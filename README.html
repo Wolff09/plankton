@@ -73,12 +73,12 @@
 			padding: 0 .2rem;
 		}
 
-		.badge.full {
+		.badge.reduced {
 			color: #146C43;
 			background-color: #d1e7dd;
 			border: 1px solid #a3cfbb;
 		}
-		.badge.reduced {
+		.badge.full {
 			color: #0a58ca;
 			background-color: #cfe2ff;
 			border: 1px solid #9ec5fe;
@@ -329,7 +329,7 @@
 			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --new</code></pre>
 			<p>
 				Note that the verification of the LO-tree may take a while:
-				about 20 minutes on an Apple M1 Pro or about <b>?????</b> minutes on an Intel i5-8600K.
+				about 17 minutes on an Apple M1 Pro or about 25 minutes on an Intel i5-8600K.
 				Once finished, <kbd>plankton</kbd> will print the verdict and time taken, e.g.:
 			</p>
 			<pre class="bg-light border">
@@ -349,7 +349,7 @@
   		</p>
 			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old</code></pre>
 			<p>
-				This will take about <b>?????</b> minutes on an Apple M1 Pro or about <b>?????</b> minutes on an Intel i5-8600K.
+				This will take about 2 minutes both on an Apple M1 Pro and on an Intel i5-8600K.
 				In the end, you will see an error along the following lines, stating that verification failed (to be clear: this is the expected behavior for <code>--old</code>):
 			</p>
 			<pre class="bg-light border">
@@ -381,12 +381,12 @@
 			<h4 id="claim2">Claim 2: Performance Comparison</h4>
 			<p>
 				<strong>Central claim</strong>:
-				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down (factor 2-4 slower).
+				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down (between 2 to 3 times slower).
 			</p>
 
 			<p>
-				The <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span> consists of 10 data structure implementations and may take several ours (<b>???</b>h to <b>???</b>h, see below).
-				To reduce the time commitment, we include  <span class="badge reduced">reduced</span> benchmark set&mdash;it may still take long (<b>???</b>h to <b>???</b>h, see below).
+				The <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span> consists of 10 data structure implementations and may take several ours (up to five hours, see below).
+				To reduce the time commitment, we include a <span class="badge reduced">reduced</span> benchmark set&mdash;it may still take long (up to one hour, see below).
 				The benchmark sets consists of the following implementations from <span class="ref-full">MeyerWW22</span>:
 			</p>
 			<ul>
@@ -443,7 +443,6 @@
 					<code>examples/Michael.pl</code>
 					&nbsp;
 					<span class="badge full">full</span>
-					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>variation of Michael's set</i> <span class="ref-full">Michael02</span>:
@@ -451,6 +450,7 @@
 					<code>examples/MichaelWaitFreeSearch.pl</code>
 					&nbsp;
 					<span class="badge full">full</span>
+					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>Harris' set</i> <span class="ref-full">Harris01</span>:
@@ -480,47 +480,68 @@
 				For both scripts, you can specify the number of times each benchmark should be repeated to average the runtime, e.g.: <code class="bash">./benchmark.sh 5</code> performs 5 repetitions.
 				By default, the scripts will execute every benchmark once.
 			</p>
-			<div class="alert alert-warning">
-				We are aware of an issue where the <code>benchmark.py</code> and <code>reduced.py</code> scripts will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
-				The issue is due to Z3 spontaneously misbehaving when run with Python's <code>subprocess</code> module.
-				We believe that this triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
-			</div>
 			<p>
 				After all benchmarks are run, the expected output on an Apple M1 is the following table:
 			</p>
 			<pre class="bg-light border">
    Program                               | Analysis |    Linearizable | Factor 
   ---------------------------------------+----------+-----------------+--------
-   examples/LazySet.pl                   |    --old |         1m24s ✓ |        
-                                         |    --new |         2m13s ✓ |  ×1.58 
-   examples/FineSet.pl                   |    --old |         0m47s ✓ |        
-                                         |    --new |         0m44s ✓ |  ×0.94 
+   examples/FineSet.pl                   |    --old |         0m44s ✓ |        
+                                         |    --new |         0m44s ✓ |  <span class="text-success">×1.02</span>
+   examples/LazySet.pl                   |    --old |         1m21s ✓ |        
+                                         |    --new |         2m13s ✓ |  <span class="text-success">×1.65</span> 
    examples/VechevYahavDCas.pl           |    --old |         1m09s ✓ |        
-                                         |    --new |         1m15s ✓ |  ×1.08 
+                                         |    --new |         1m15s ✓ |  <span class="text-success">×1.08</span> 
    examples/VechevYahavCas.pl            |    --old |         0m52s ✓ |        
-                                         |    --new |         2m20s ✓ |  ×2.70 
+                                         |    --new |         2m20s ✓ |  <span class="text-success">×2.70</span> 
    examples/ORVYY.pl                     |    --old |         0m54s ✓ |        
-                                         |    --new |         1m36s ✓ |  ×1.79 
+                                         |    --new |         1m36s ✓ |  <span class="text-success">×1.79</span> 
    examples/FemrsTreeNoMaintenance.pl    |    --old |         2m22s ✓ |        
-                                         |    --new |         3m50s ✓ |  ×1.62 
+                                         |    --new |         3m50s ✓ |  <span class="text-success">×1.62</span> 
    examples/Michael.pl                   |    --old |         3m06s ✓ |        
-                                         |    --new |         6m54s ✓ |  ×2.22 
-   examples/MichaelWaitFreeSearch.pl     |    --old |         3m43s ✓ |        
-                                         |    --new |         6m56s ✓ |  ×1.87 
-   examples/Harris.pl                    |    --old |        18m19s ✓ |        
-                                         |    --new |        57m16s ✓ |  ×3.13 
-   examples/HarrisWaitFreeSearch.pl      |    --old |        20m02s ✓ |        
-                                         |    --new |        43m22s ✓ |  ×2.16</pre>
+                                         |    --new |         6m53s ✓ |  <span class="text-success">×2.22</span> 
+   examples/MichaelWaitFreeSearch.pl     |    --old |         3m42s ✓ |        
+                                         |    --new |         6m53s ✓ |  <span class="text-success">×1.86</span> 
+   examples/Harris.pl                    |    --old |        18m14s ✓ |        
+                                         |    --new |        57m20s ✓ |  <span class="text-success">×3.15</span> 
+   examples/HarrisWaitFreeSearch.pl      |    --old |        19m54s ✓ |        
+                                         |    --new |        43m00s ✓ |  <span class="text-success">×2.16</span> </pre>
 			<p>
 				For comparison, the expected output on an Intel i5-8600K is this:
 			</p>
 			<pre class="bg-light border">
-  [][][][] ?????????????????</pre>
+   Program                               | Analysis |    Linearizable | Factor 
+  ---------------------------------------+----------+-----------------+--------
+   examples/LazySet.pl                   |    --old |         1m58s ✓ |        
+                                         |    --new |         5m36s ✓ |  <span class="text-success">×2.84</span> 
+   examples/FineSet.pl                   |    --old |         1m08s ✓ |        
+                                         |    --new |         1m10s ✓ |  <span class="text-success">×1.02</span> 
+   examples/VechevYahavDCas.pl           |    --old |         1m57s ✓ |        
+                                         |    --new |         1m58s ✓ |  <span class="text-success">×1.01</span> 
+   examples/VechevYahavCas.pl            |    --old |         1m15s ✓ |        
+                                         |    --new |         2m02s ✓ |  <span class="text-success">×1.63</span> 
+   examples/ORVYY.pl                     |    --old |         1m03s ✓ |        
+                                         |    --new |         2m22s ✓ |  <span class="text-success">×2.24</span> 
+   examples/FemrsTreeNoMaintenance.pl    |    --old |         3m47s ✓ |        
+                                         |    --new |         6m13s ✓ |  <span class="text-success">×1.64</span> 
+   examples/Michael.pl                   |    --old |         5m03s ✓ |        
+                                         |    --new |        10m48s ✓ |  <span class="text-success">×2.14</span> 
+   examples/MichaelWaitFreeSearch.pl     |    --old |         5m14s ✓ |        
+                                         |    --new |        11m30s ✓ |  <span class="text-success">×2.20</span> 
+   examples/Harris.pl                    |    --old |        33m37s ✓ |        
+                                         |    --new |        91m09s ✓ |  <span class="text-success">×2.71</span> 
+   examples/HarrisWaitFreeSearch.pl      |    --old |        32m41s ✓ |        
+                                         |    --new |        66m22s ✓ |  <span class="text-success">×2.03</span> </pre>
 			<p>
 				Here, we are mainly concerned with the last column of the table, the relative cost of our <code>--new</code> analysis compared to the <code>--old</code> one.
-				As stated before, we expect <code>--new</code> to take at most four times as long as <code>--old</code> (i.e., the factor should always be less or equal to 4).
+				As stated before, we expect <code>--new</code> to take at most three times as long as <code>--old</code> (i.e., the displayed factor should always be less or equal to 3).
 				We stress that the absolute running times vary from system to system.
 			</p>
+			<div class="alert alert-warning">
+				We are aware of an issue where the <code>benchmark.py</code> and <code>reduced.py</code> scripts will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				The issue is due to Z3 spontaneously misbehaving when run with Python's <code>subprocess</code> module.
+				We believe that this triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
+			</div>
 
 			<p>
 				<i>This concludes artifact evaluation.</i>
@@ -613,7 +634,6 @@
 						<td class="text-center">&mdash;</td>
 						<td>
 							Input program file to analyze.
-							For examples, <i class="fas fa-link text-secondary"></i> <a class="text-secondary" href="#benchmarks-programs" class="">See Benchmark Programs</a>
 						</td>
 					</tr>
 					<tr>
