@@ -5,8 +5,8 @@ import signal
 from tempfile import NamedTemporaryFile
 from subprocess import Popen, TimeoutExpired
 from statistics import mean
+import argparse
 import re
-import sys
 
 #
 # CONFIGURATION begin
@@ -15,9 +15,9 @@ import sys
 TIMEOUT = 60 * 60 * 6  # in seconds
 REPETITIONS = 1
 
-EXECUTABLE = "./plankton"
-BENCHMARKS = {  # path: [flags]
-    # "examples/check.pl": [],
+EXECUTABLE = "build/bin/plankton"
+BENCHMARKS = {}
+FULL = {  # path: [flags]
     "examples/FineSet.pl": [],
     "examples/LazySet.pl": [],
     "examples/VechevYahavDCas.pl": ["--loopNoPostJoin"],
@@ -28,11 +28,18 @@ BENCHMARKS = {  # path: [flags]
     "examples/MichaelWaitFreeSearch.pl": [],
     "examples/Harris.pl": ["--future"],
     "examples/HarrisWaitFreeSearch.pl": ["--future"],
-    # "examples/LO_abstract.pl": [],
 }
-LOTREE = ("examples/LO_abstract.pl", [])
-WIDTH = 40
+REDUCED = {  # path: [flags]
+    "examples/FineSet.pl": [],
+    "examples/LazySet.pl": [],
+    "examples/VechevYahavCas.pl": [],
+    "examples/ORVYY.pl": [],
+    "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
+    "examples/MichaelWaitFreeSearch.pl": [],
+}
+LOTREE = ("examples/LO_tree.pl", [])
 STARTED = False
+WIDTH = 40
 
 #
 # CONFIGURATION end
@@ -144,10 +151,7 @@ def extract_info(output):
     return Result(total, iters, eff, can, com, fut, hist, join, inter)
 
 
-def run_with_timeout_to_file(path, mode, file):
-    if path not in BENCHMARKS:
-        raise NameError("Internal error: could not find benchmark file '" + path + "'")
-    flags = BENCHMARKS.get(path)
+def run_with_timeout_to_file(path, flags, mode, file):
     all_args = [EXECUTABLE, path] + flags + [mode] + ["-o " + file.name]
 
     # make sure to properly kill subprocesses after timeout
@@ -166,8 +170,12 @@ def run_with_timeout_to_file(path, mode, file):
 
 
 def run_with_timeout(path, mode):
+    if path not in BENCHMARKS:
+        raise NameError("Internal error: could not find benchmark file '" + path + "'")
+    flags = BENCHMARKS.get(path)
+
     with NamedTemporaryFile(mode='r', delete=True) as tmp:
-        return run_with_timeout_to_file(path, mode, tmp)
+        return run_with_timeout_to_file(path, flags, mode, tmp)
 
 
 def run_test(path, i, mode):
@@ -243,35 +251,33 @@ def claim1():
     print("CLAIM 1: verification of the LO-tree")
     print("====================================")
     print()
-    print()
-    log_old, log_new = "<unknown>", "<unknown>"
-    with open("LO_old.txt", 'r') as file:
+    path, flags = LOTREE
+    with open("LO_old.txt", 'w') as file:
         log_old = file.name
-        print("Running --old {}  ".format(LOTREE), flush=True, end="")
-        output_old = run_with_timeout_to_file(LOTREE, "--old", file)
+        print("Running --old {}  ".format(path), flush=True, end="")
+        output_old = run_with_timeout_to_file(path, flags, "--old", file)
         result_old = extract_info(output_old)
         if result_old.success:
             print(result_old.info, flush=True)
         else:
             print(result_old.info, flush=True)
-    with open("LO_new.txt", 'r') as file:
+    with open("LO_new.txt", 'w') as file:
         log_new = file.name
-        print("Running --new {}  ".format(LOTREE), flush=True, end="")
-        output_new = run_with_timeout_to_file(LOTREE, "--new", file)
-        result_new = extract_info(output_old)
+        print("Running --new {}  ".format(path), flush=True, end="")
+        output_new = run_with_timeout_to_file(path, flags, "--new", file)
+        result_new = extract_info(output_new)
         if result_new.success:
             print(result_new.info, flush=True)
         else:
             print(err(result_new.info), flush=True)
     print()
     old_expected = "failure"
-    old_actual = good("failure ✓") if not result_old.success else err("success ✗")
+    old_actual = bold(good("failure ✓")) if not result_old.success else bold(err("success ✗"))
     new_expected = "success"
-    new_actual = good("success ✓") if not result_old.success else err("failure ✗")
+    new_actual = bold(good("success ✓")) if result_new.success else bold(err("failure ✗"))
     print("Log files have been written to {} and {}.".format(log_old, log_new))
     print("Expected result for '--old' analysis: {}. Actual result: {}".format(old_expected, old_actual))
     print("Expected result for '--new' analysis: {}. Actual result: {}".format(new_expected, new_actual))
-    
 
 
 def claim2():
@@ -281,7 +287,6 @@ def claim2():
     print("Settings: iterations={0}, timeout={1}".format(REPETITIONS, human_readable(TIMEOUT*1000)))
     print("Running benchmarks...")
     print()
-    STARTED = True
     for i in range(REPETITIONS):
         for path in BENCHMARKS:
             result_old = run_test_old(path, i)
@@ -291,23 +296,33 @@ def claim2():
     finalize()
 
 
-def main():
-    STARTED = False
-    claim1()
-    print()
-    print()
-    claim2()
-
-
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", type=int, dest="iter")
+    parser.add_argument("-t", type=int, dest="time")
+    parser.add_argument("--reduced", action='store_const', const=True, dest="reduced")
+
+    args = parser.parse_args()
+    if args.iter:
+        if args.iter > 1:
+            REPETITIONS = args.iter
+    if args.time:
+        if args.time > 0:
+            TIMEOUT = args.time
+
+    if args.reduced:
+        BENCHMARKS = REDUCED
+    else:
+        BENCHMARKS = FULL
+
     try:
-        if len(sys.argv) > 1:
-            REPETITIONS = int(sys.argv[1])
-            if len(sys.argv) > 2:
-                TIMEOUT = int(sys.argv[2])
-        main()
+        claim1()
+        print()
+        print()
+        STARTED = False
+        claim2()
     except KeyboardInterrupt:
         print("", flush=True)
         print("", flush=True)
         print("[interrupted]", flush=True)
-        finalize()
+    finalize()

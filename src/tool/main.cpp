@@ -37,8 +37,8 @@ struct IsRegularFileConstraint : public TCLAP::Constraint<std::string> {
     }
 };
 
-inline CommandLineInput Interact(int argc, char** argv) {
-    CommandLineInput input;
+inline std::unique_ptr<CommandLineInput> Interact(int argc, char** argv) {
+    auto input = std::make_unique<CommandLineInput>();
 
     TCLAP::CmdLine cmd("PLANKTON verification tool for lock-free data structures", ' ', "1.0");
     auto isFile = std::make_unique<IsRegularFileConstraint>("_to_input");
@@ -63,26 +63,26 @@ inline CommandLineInput Interact(int argc, char** argv) {
     TCLAP::ValueArg<std::size_t> proofMaxIterArg("", "proofMaxIter", "Maximal iterations for finding an interference set before aborting", false, 7, "integer", cmd);
 
     cmd.parse(argc, argv);
-    input.pathToInput = programArg.getValue();
-    input.spuriousCasFail = !casSwitch.getValue();
+    input->pathToInput = programArg.getValue();
+    input->spuriousCasFail = !casSwitch.getValue();
     // input.printGist = gistSwitch.getValue();
 
-    input.newMode = flagNewMode.getValue() || !flagOldMode.getValue();
-    input.setup.loopJoinUntilFixpoint = !loopWidenSwitch.getValue();
-    input.setup.loopJoinPost = !loopNoPostJoinSwitch.getValue();
-    input.setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
-    input.setup.loopMaxIterations = loopMaxIterArg.getValue();
-    input.setup.proofMaxIterations = proofMaxIterArg.getValue();
-    input.setup.useFutures = useFutures.getValue();
-    input.setup.improvePastIncreasedPrecisionForLinearizability = false;
-    input.setup.improvePastIncreasedPrecisionForStability = input.newMode;
-    input.setup.improvePastIncreasedPrecisionForAnnotations = input.newMode;
+    input->newMode = flagNewMode.getValue() || !flagOldMode.getValue();
+    input->setup.loopJoinUntilFixpoint = !loopWidenSwitch.getValue();
+    input->setup.loopJoinPost = !loopNoPostJoinSwitch.getValue();
+    input->setup.macrosTabulateInvocations = !macroNoTabulationSwitch.getValue();
+    input->setup.loopMaxIterations = loopMaxIterArg.getValue();
+    input->setup.proofMaxIterations = proofMaxIterArg.getValue();
+    input->setup.useFutures = useFutures.getValue();
+    input->setup.improvePastIncreasedPrecisionForLinearizability = false;
+    input->setup.improvePastIncreasedPrecisionForStability = input->newMode;
+    input->setup.improvePastIncreasedPrecisionForAnnotations = input->newMode;
 
     if (outputPath.isSet()) {
-        input.logFile.open(outputPath.getValue());
-        input.logToFile = true;
-        LogStream::SetOut(input.logFile);
-        LogStream::SetErr(input.logFile);
+        input->logFile.open(outputPath.getValue());
+        input->logToFile = true;
+        LogStream::SetOut(input->logFile);
+        LogStream::SetErr(input->logFile);
     }
 
     return input;
@@ -158,21 +158,28 @@ inline void PrintResult(const CommandLineInput& cmd, const ParsingResult& input,
 // Main
 //
 
-int main(int argc, char** argv) {
+std::unique_ptr<CommandLineInput> GetCmd(int argc, char** argv) {
     try {
-        auto cmd = Interact(argc, argv);
-        auto input = Parse(cmd);
-        PrintInfo(cmd);
-        PrintInput(input);
-        auto result = Verify(input, cmd.setup);
-        PrintResult(cmd, input, result);
-        return 0;
-
+        return Interact(argc, argv);
     } catch (TCLAP::ArgException& err) {
         // command line misuse
-        INFO("ERROR: " << err.error() << " for arg " << err.argId() << std::endl << std::endl)
-        ERROR(err.error() << " for arg " << err.argId() << std::endl)
-        return 1;
+        std::cout << "ERROR: " << err.error() << " for arg " << err.argId() << std::endl << std::endl;
+        std::cerr << err.error() << " for arg " << err.argId() << std::endl;
+        return nullptr;
+    }
+}
+
+int main(int argc, char** argv) {
+    auto cmd = GetCmd(argc, argv);
+    if (!cmd) return 1;
+
+    try {
+        auto input = Parse(*cmd);
+        PrintInfo(*cmd);
+        PrintInput(input);
+        auto result = Verify(input, cmd->setup);
+        PrintResult(*cmd, input, result);
+        return 0;
 
     } catch (std::logic_error& err) { // TODO: catch proper error class
         // plankton error
