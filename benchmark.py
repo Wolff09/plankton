@@ -15,7 +15,7 @@ import re
 TIMEOUT = 60 * 60 * 6  # in seconds
 REPETITIONS = 1
 
-EXECUTABLE = "build/bin/plankton"
+EXECUTABLE = "./plankton"
 BENCHMARKS = {}
 FULL = {  # path: [flags]
     "examples/FineSet.pl": [],
@@ -249,8 +249,10 @@ def claim1():
     print("CLAIM 1: verification of the LO-tree")
     print("====================================")
     print()
+    open("LO_old.txt", 'w')  # create if not existing
+    open("LO_new.txt", 'w')  # create if not existing
     path, flags = LOTREE
-    with open("LO_old.txt", 'w') as file:
+    with open("LO_old.txt", 'r') as file:
         log_old = file.name
         print("Running --old {}  ".format(path), flush=True, end="")
         output_old = run_with_timeout_to_file(path, flags, "--old", file)
@@ -259,7 +261,7 @@ def claim1():
             print(result_old.info, flush=True)
         else:
             print(result_old.info, flush=True)
-    with open("LO_new.txt", 'w') as file:
+    with open("LO_new.txt", 'r') as file:
         log_new = file.name
         print("Running --new {}  ".format(path), flush=True, end="")
         output_new = run_with_timeout_to_file(path, flags, "--new", file)
@@ -320,9 +322,7 @@ if __name__ == '__main__':
         claim1()
     except KeyboardInterrupt:
         print("", flush=True)
-        print("", flush=True)
         print("[interrupted]", flush=True)
-        exit(1)
 
     print()
     print()
@@ -330,7 +330,5 @@ if __name__ == '__main__':
         claim2()
     except KeyboardInterrupt:
         print("", flush=True)
-        print("", flush=True)
         print("[interrupted]", flush=True)
         finalize()
-        exit(1)
