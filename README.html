@@ -170,7 +170,7 @@
 			<h1 id="started"><span class="index">A</span> Getting Started</h1>
 			<p>
 				To get the artifact up and running, you may choose between a prebuilt docker image or a docker build script.
-				There are prebuilt images for <strong>x86-64</strong> and <strong>arm64</strong> (Apple Silicon).
+				There are prebuilt images for <strong>x86-64</strong> and <strong>arm64</strong> (including Apple Silicon).
 				The build script is universal.
 			</p>
 
@@ -222,7 +222,7 @@
 			</ol>
 
 			<!-- ********************************* DOCKER SCRIPT ******************************** -->
-			<h4 id="dbuild">Install Option 3: Docker build script (universal)</h4>
+			<h4 id="dbuild">Install Option 2: Docker build script (universal)</h4>
 			<ol>
 				<li>
 					Install <a href="https://www.docker.com/">Docker</a>.
@@ -236,7 +236,7 @@
 					We assume that this folder's location is <code>path/to/plankton</code>.
 				</li>
 				<li>
-					Create a docker instance for the artifact:
+					Create a docker image for the artifact (this requires internet access):
 					<pre class="bg-light border"><code class="bash">  cd path/to/plankton
   docker build . -t plankton</code></pre>
 				</li>
@@ -296,7 +296,7 @@
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, a Python script <code>eval.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
+				In there is the executable <code>plankton</code>, a Python script <code>eval.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was built.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -341,10 +341,10 @@
 			</p>
 			<pre class="bg-light border"><code class="bash">  docker run -it plankton</code></pre>
 			<p>
-				To reproduce the experiments, we run the <code>eval.py</code> script.
+				To reproduce the experiments, run the <code>eval.py</code> script.
 				Since this will repeat the <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span>, it may take several ours: up to 4h on an Apple M1 Pro and up to 6h on an Intel i5-8600.
 				To reduce the time requirements, we provide a <span class="badge reduced">reduced</span> benchmark set that takes up to 1h30min.
-				See <a href="#claim2">Claim 2</a> for more details.
+				See <a href="#claim2">Claim 2</a> for a comparison of the <span class="badge full">full</span> and <span class="badge reduced">reduced</span> benchmark sets.
 			</p>
 			<p>To reproduce <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a> with the <span class="badge full">full</span> benchmark set, do:</p>
 			<pre class="bg-light border"><code class="bash">  python3 eval.py</code></pre>
@@ -382,8 +382,8 @@
   ./plankton examples/LO_tree.pl --new</code></pre>
   		<p>
   			The output for the two invocations is written to the log files <code>LO_old.txt</code> and <code>LO_new.txt</code>.
-  			At the end of <code>LO_old.txt</code>, you will find the reason for failure.
-  			It should look something like this (you can do <code>tail LO_old.txt</code> to see it):
+  			At the end of <code>LO_old.txt</code> you will find the reason for failure (you can do <code>tail LO_old.txt</code> to see it).
+  			It should look like this:
   		</p>
 			<pre class="bg-light border">
   &lt;...&gt;
@@ -554,10 +554,10 @@
 
    Program                               | Analysis |    Linearizable | Factor 
   ---------------------------------------+----------+-----------------+--------
-   examples/LazySet.pl                   |    --old |         1m58s ✓ |        
-                                         |    --new |         5m36s ✓ |  <span class="text-success">×2.84</span> 
    examples/FineSet.pl                   |    --old |         1m08s ✓ |        
                                          |    --new |         1m10s ✓ |  <span class="text-success">×1.02</span> 
+   examples/LazySet.pl                   |    --old |         1m58s ✓ |        
+                                         |    --new |         5m36s ✓ |  <span class="text-success">×2.84</span> 
    examples/VechevYahavDCas.pl           |    --old |         1m57s ✓ |        
                                          |    --new |         1m58s ✓ |  <span class="text-success">×1.01</span> 
    examples/VechevYahavCas.pl            |    --old |         1m15s ✓ |        
@@ -632,7 +632,7 @@
 				Then, do the following
 			</p>
 			<pre class="bg-light border"><code class="bash">  cd path/to/plankton.zip
-  unzip plankton-pldi.zip  # alternatively: tar -xvf plankton-pldi.zip
+  unzip plankton.zip  # alternatively: tar -xvf plankton.zip
   mkdir build
   cd build
   CXX=/path/to/CXX-compiler cmake .. -DCMAKE_INSTALL_PREFIX=/path/to/installation
@@ -689,7 +689,7 @@
 					<tr>
 						<td class="text-nowrap"><code> --new</code></td>
 						<td class="text-center">yes</td>
-						<td class="text-center"><code>false</code></td>
+						<td class="text-center"><code>true</code></td>
 						<td>Enables temporal interpolation during proof construction, performing hindsight reasoning as presented in our paper.</td>
 					</tr>
 					<tr>
