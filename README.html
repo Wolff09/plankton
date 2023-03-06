@@ -170,7 +170,7 @@
 			<h1 id="started"><span class="index">A</span> Getting Started</h1>
 			<p>
 				To get the artifact up and running, you may choose between a prebuilt docker image or a docker build script.
-				There are prebuilt images for <strong>x86</strong> and <strong>arm64</strong> (Apple Silicon).
+				There are prebuilt images for <strong>x86-64</strong> and <strong>arm64</strong> (Apple Silicon).
 				The build script is universal.
 			</p>
 
@@ -181,29 +181,36 @@
 			</p>
 			<pre class="bg-light border files">
   https://zenodo.org/record/7686111
-  ├── plankton_x86.tar     # prebuilt docker image
-  ├── plankton_arm64.tar   # prebuilt docker image
-  ├── plankton.zip         # source files + docker build script
-  └── README.html          # this document</pre>
+  ├── plankton_arm64.tar    # prebuilt docker image
+  ├── plankton_x86-64.tar   # prebuilt docker image
+  ├── plankton.zip          # source files + docker build script
+  └── README.html           # this document</pre>
 			<p>
 				You do not need to download the entire repository!
 				See your preferred method of installation below for more details.
 			</p>
+			<p>
+				The MD5 checksums for the installation files are:
+			<pre class="bg-light border files">
+  MD5 (plankton_arm64.tar)  = ????
+  MD5 (plankton_x86-64.tar) = ????
+  MD5 (plankton.zip)        = ????</pre>
+			</p>
 
 			<!-- ********************************* DOCKER IMAGE ********************************* -->
-			<h4>Install Option 1: Docker image (x86, arm64)</h4>
+			<h4>Install Option 1: Docker image (x86-64, arm64)</h4>
 			<ol>
 				<li>
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
 					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar</code> that fits your hardware from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
-					We provide images for <strong>arm64</strong> (this includes Apple Silicon) and 64bit <strong>x86</strong>; for other hardware architectures, you need to <a href="#dbuild">build the Docker image yourself.</a>
+					We provide images for <strong>arm64</strong> (this includes Apple Silicon) and <strong>x86-64</strong>; for other hardware architectures, you need to <a href="#dbuild">build the Docker image yourself.</a>
 					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties.
 					
 					<br>
 					In case you do not know the architecture of you system, run the command <code>arch</code> or <code>uname -m</code> in a shell.
-					It may print an alias of <code>x86</code>, e.g.: <code>x86-64</code>, <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
+					It may print an alias of <code>x86-64</code>, e.g.: <code>x86_64</code>, <code>amd64</code>, or even <code>i386</code> (MacOS only).
 				</li>
 				<li>
 					Load the downloaded image into Docker:
@@ -267,7 +274,7 @@
 				You can ignore the <code>@gist</code> line, it is just an easy-to-parse summary.
 			</p>
 			<p>
-				If the check succeeded, you are ready for the full evaluation! You can fast-forward to the <a href="#eval">step-by-step instructions</a>.
+				If the check succeeded, you are ready for the full evaluation! You may fast-forward to the <a href="#eval">step-by-step instructions</a>.
 			</p>
 
 			<!-- ****************************** ARTIFACT STRUCTURE ****************************** -->
@@ -282,15 +289,14 @@
   │   ├── source/
   │   │   └── ...
   │   ├── plankton
-  │   ├── benchmark.py
-  │   └── reduced.py
+  │   └── eval.py
   ├── plankton-debug/
   │   └── ...
   └── z3/
       └── ...</pre>
 			<p>
 				The <code>/artifact/plankton/</code> folder contains an installation of <kbd>plankton</kbd>.
-				In there is the executable <code>plankton</code>, Python scripts <code>benchmark.py</code> and <code>reduced.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
+				In there is the executable <code>plankton</code>, a Python script <code>eval.py</code> for the <a href="#eval">step-by-step instructions</a>, a folder <code>examples/</code> with linearizable data structure implementations, and a folder <code>source/</code> containing the source files from which the binary was build.
 			</p>
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
@@ -309,34 +315,90 @@
 		<div class="mt-4">
 			<h1 id="eval"><span class="index">B</span> Step-by-Step Instructions</h1>
 			<p>
-				We show how to reproduce the experiments from the submitted version of our paper (<a href="#claim1">Claim 1</a>).
-				Moreover, we show how to produce additional experimental results (<a href="#claim2">Claim 2</a>) that we will add to the camera-ready version, as per the reviewers' request.
+				The artifact supports the following claims:
 			</p>
-			<div class="alert alert-info">
-				If you do not have the artifact running anymore, fire it up: <code>docker run -it plankton</code>
-			</div>
+			<ul>
+				<li>
+					<strong>Claim 1:</strong>
+					our new version of <kbd>plankton</kbd> automatically verifies an implementation of the <i>LO-tree</i> <span class="ref-full">DrachslerVY14</span> where the maintenance operations are replaced by <i>most general stubs</i>.
+				</li>
+				<li>
+					<strong>Claim 2:</strong>
+					our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down: typically around 2 times slower and at most four times slower.
+					<br>
+					Note: this claim is not part of our submitted paper. We will add this comparison as per the reviewers' requests.
+				</li>
+			</ul>
+			<p>
+				The next step is to <a href="#reproduce">Reproduce the Experiments</a> using a push-button script.
+				Afterwards, we elaborate on the evidence produced by the script regarding <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a>.
+			</p>
+
+			<!-- *********************************** REPRODUCE ********************************** -->
+			<h4 id="reproduce">Reproduce the Experiments</h4>
+			<p>
+				If you do not have the artifact running anymore, fire it up:
+			</p>
+			<pre class="bg-light border"><code class="bash">  docker run -it plankton</code></pre>
+			<p>
+				To reproduce the experiments, we run the <code>eval.py</code> script.
+				Since this will repeat the <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span>, it may take several ours: up to 4h on an Apple M1 Pro and up to 6h on an Intel i5-8600.
+				To reduce the time requirements, we provide a <span class="badge reduced">reduced</span> benchmark set that takes up to 1h30min.
+				See <a href="#claim2">Claim 2</a> for more details.
+			</p>
+			<p>To reproduce <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a> with the <span class="badge full">full</span> benchmark set, do:</p>
+			<pre class="bg-light border"><code class="bash">  python3 eval.py</code></pre>
+			<p>To reproduce <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a> with the <span class="badge reduced">reduced</span> benchmark set, do:</p>
+			<pre class="bg-light border"><code class="bash">  python3 eval.py --reduced</code></pre>
+			<p>
+				The next sections explain the output generated by the <code>eval.py</code> script.
+			</p>
 
 			<!-- ************************************ LO TREE *********************************** -->
 			<h4 id="claim1">Claim 1: Verifying the LO-tree</h4>
 			<p>
-				<strong>Central claim:</strong>
-				our new version of <kbd>plankton</kbd> automatically verifies a version of the <i>LO-tree</i> <span class="ref-full">DrachslerVY14</span> where the maintenance operations are replaced by <i>most general stubs</i>.
-				The code of the implementation can be found in the file <code>examples/LO_tree.pl</code>
-			</p>
-			<p>
-				To repeat the verification, run the following command:
-			</p>
-			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --new</code></pre>
-			<p>
-				Note that the verification of the LO-tree may take a while:
-				about 17 minutes on an Apple M1 Pro or about 25 minutes on an Intel i5-8600K.
-				Once finished, <kbd>plankton</kbd> will print the verdict and time taken, e.g.:
+				The <code>eval.py</code> script is expected to produce output along the following lines:
 			</p>
 			<pre class="bg-light border">
-  ...
+  CLAIM 1: verification of the LO-tree
+  ====================================
+  
+  Running --old examples/LO_tree.pl  error
+  Running --new examples/LO_tree.pl  16m43s
+  
+  Log files have been written to LO_old.txt and LO_new.txt.
+  Expected result for '--old' analysis: failure. Actual result: <span class="text-success">failure ✓</span>
+  Expected result for '--new' analysis: success. Actual result: <span class="text-success">success ✓</span></pre>
+  		<p>
+  			The output informs you that:
+  			(i) the original analysis from <span class="ref-full">MeyerWW22</span>, denoted by <code>--old</code>, fails while
+  			(ii) our novel analysis, denoted by <code>--new</code>, succeeds in verifying the LO tree.
+  		</p>
+  		<p><i>This concludes reproducing the claim</i></p>
+  		<p>
+  			In order to obtain the above results, the <code>eval.py</code> script executes the following two invocation of <kbd>plankton</kbd>:
+  		</p>
+  		<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old
+  ./plankton examples/LO_tree.pl --new</code></pre>
+  		<p>
+  			The output for the two invocations is written to the log files <code>LO_old.txt</code> and <code>LO_new.txt</code>.
+  			At the end of <code>LO_old.txt</code>, you will find the reason for failure.
+  			It should look something like this (you can do <code>tail LO_old.txt</code> to see it):
+  		</p>
+			<pre class="bg-light border">
+  &lt;...&gt;
+  [iter-1][fun-contains] Checking linearizability of function 'contains'...
+
+  ERROR: Could not establish linearizability for function 'contains'.</pre>
+  		<p>
+  			At the end of <code>LO_new.txt</code> you will find a message stating that proof construction was successful and that the implementation is linearizable.
+  			It will look like this:
+  		</p>
+			<pre class="bg-light border">
+  &lt;...&gt;
   [iter-2] Fixed-point reached.
   Proof generation was successful!
-  ...
+  &lt;...&gt;
   
   #
   # Verdict for '"Logical Ordering Tree (most general tree overlay)"':
@@ -344,33 +406,17 @@
   #   time taken (ms): 2483975
   #</pre>
   		<p>
-				The flag <code class="bash">--new</code> instructs <kbd>plankton</kbd> to use our novel analysis (i.e. temporal interpolation from our paper).
-				To have <kbd>plankton</kbd> perform the original analysis devised by <span class="ref-full">MeyerWW22</span>, use the flag <code class="bash">--old</code> instead:
-  		</p>
-			<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old</code></pre>
-			<p>
-				This will take about 2 minutes both on an Apple M1 Pro and on an Intel i5-8600K.
-				In the end, you will see an error along the following lines, stating that verification failed (to be clear: this is the expected behavior for <code>--old</code>):
-			</p>
-			<pre class="bg-light border">
-  ...
-  [iter-1][fun-contains] Checking linearizability of function 'contains'...
-
-  ERROR: Could not establish linearizability for function 'contains'.</pre>
-
-  		<p><i>This concludes reproducing the claim.</i></p>
-			<p>
-				While <kbd>plankton</kbd> is constructing a proof, its output informs you of the current status.
-				This includes (i) the iteration of the overall fixed point that is being computed, (ii) the function that is being analyzed, (iii) the command being handled, (iv) loops for which a loop invariant is computed, and (v) macros that are invoked.
+  			The rest of the files contain the status output that <kbd>plankton</kbd> generates during proof construction.
+  			It includes (i) the iteration of the overall fixed point that is being computed, (ii) the function that is being analyzed, (iii) the command being handled, (iv) loops for which a loop invariant is computed, and (v) macros that are invoked.
 				For an example, consider this output snippet:
 			</p>
 			<pre class="bg-light border">
-  ...
+  &lt;...&gt;
   [iter-1][fun-contains][macro-traverse][loop-2] Post for 'c_1 = y_1->left; '. (1) 
   [iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
   [iter-1][fun-contains][macro-traverse][loop-2] Post for 'assume(k_1 >= y_1->key); '. (1) 
   [iter-1][fun-contains][macro-traverse][loop-2] Applying interference. (1) 
-  ...</pre>
+  &lt;...&gt;</pre>
 			<p>
 				Here <kbd>plankton</kbd> is (i) in the 1st iteration for (ii) function <code>contains</code>, handling (iii) commands <code>c_1 = y_1->left</code> followed by <code>assume(k_1 >= y_1->key)</code> during the (iv) 2nd iteration of a fixed point for finding a loop invariant in macro (v) <code>traverse</code>.
 				After each command, <kbd>plankton</kbd> makes the resulting proof state (a separation logic assertion) stable under interference (cf. end of Section 3 in the paper).
@@ -380,14 +426,8 @@
 			<!-- ********************************** COMPARISON ********************************** -->
 			<h4 id="claim2">Claim 2: Performance Comparison</h4>
 			<p>
-				<strong>Central claim</strong>:
-				our new version of <kbd>plankton</kbd> can verify the same benchmarks as the original version from <span class="ref-full">MeyerWW22</span> with just a mild slow down (between 2 to 3 times slower).
-			</p>
-
-			<p>
-				The <span class="badge full">full</span> benchmark set from <span class="ref-full">MeyerWW22</span> consists of 10 data structure implementations and may take several ours (up to five hours, see below).
-				To reduce the time commitment, we include a <span class="badge reduced">reduced</span> benchmark set&mdash;it may still take long (up to one hour, see below).
-				The benchmark sets consists of the following implementations from <span class="ref-full">MeyerWW22</span>:
+				The <code>eval.py</code> script runs <kbd>plankton</kbd> with its original <code>--old</code> and our <code>--new</code> analysis on the <span class="badge full">full</span> / <span class="badge reduced">reduced</span> benchmark set by <span class="ref-full">MeyerWW22</span>.
+				The benchmark set includes the following 10 / 5 implementations:
 			</p>
 			<ul>
 				<li>
@@ -396,7 +436,6 @@
 					<code>examples/FineSet.pl</code>
 					&nbsp;
 					<span class="badge full">full</span>
-					<span class="badge reduced">reduced</span>
 				</li>
 				<li>
 					<i>Lazy set</i> <span class="ref-full">HellerHLMSS05</span>:
@@ -467,23 +506,18 @@
 					<span class="badge full">full</span>
 				</li>
 			</ul>
-
 			<p>
-				To analyze the <span class="badge full">full</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script:
-			</p>
-			<pre class="bg-light border"><code class="bash">  python3 benchmark.py</code></pre>
-			<p>
-				To analyze the <span class="badge reduced">reduced</span> benchmark set with both versions of <kbd>plankton</kbd>, run the following script:
-			</p>
-			<pre class="bg-light border"><code class="bash">  python3 reduced.py</code></pre>
-			<p>
-				For both scripts, you can specify the number of times each benchmark should be repeated to average the runtime, e.g.: <code class="bash">./benchmark.sh 5</code> performs 5 repetitions.
-				By default, the scripts will execute every benchmark once.
-			</p>
-			<p>
-				After all benchmarks are run, the expected output on an Apple M1 is the following table:
+				The <code>eval.py</code> script is expected to produce output along the following lines:
 			</p>
 			<pre class="bg-light border">
+  CLAIM 2: comparison of '--old' and '--new'
+  ==========================================
+  
+  Running full benchmark set...
+
+  Settings: iterations=1, timeout=180m00s
+  &lt;...&gt;
+
    Program                               | Analysis |    Linearizable | Factor 
   ---------------------------------------+----------+-----------------+--------
    examples/FineSet.pl                   |    --old |         0m44s ✓ |        
@@ -507,9 +541,17 @@
    examples/HarrisWaitFreeSearch.pl      |    --old |        19m54s ✓ |        
                                          |    --new |        43m00s ✓ |  <span class="text-success">×2.16</span> </pre>
 			<p>
-				For comparison, the expected output on an Intel i5-8600K is this:
+				Here, we are mainly concerned with the last column of the table, the relative cost of our <code>--new</code> analysis compared to the <code>--old</code> one.
+				As stated before, we expect <code>--new</code> to take at most four times as long as <code>--old</code> (i.e., the displayed factor should always be less or equal to 4).
+			</p>
+			<p>
+				We stress that the absolute running times vary from system to system.
+				The above table was produced on an Apple M1 Pro.
+				For a comparison, on an Intel i5-8600 the <code>eval.py</code> script yields the following table where the absolute running times differ but the relative cost remains similar:
 			</p>
 			<pre class="bg-light border">
+  &lt;...&gt;
+
    Program                               | Analysis |    Linearizable | Factor 
   ---------------------------------------+----------+-----------------+--------
    examples/LazySet.pl                   |    --old |         1m58s ✓ |        
@@ -532,15 +574,17 @@
                                          |    --new |        91m09s ✓ |  <span class="text-success">×2.71</span> 
    examples/HarrisWaitFreeSearch.pl      |    --old |        32m41s ✓ |        
                                          |    --new |        66m22s ✓ |  <span class="text-success">×2.03</span> </pre>
+
 			<p>
-				Here, we are mainly concerned with the last column of the table, the relative cost of our <code>--new</code> analysis compared to the <code>--old</code> one.
-				As stated before, we expect <code>--new</code> to take at most three times as long as <code>--old</code> (i.e., the displayed factor should always be less or equal to 3).
-				We stress that the absolute running times vary from system to system.
+				Besides <code>--reduced</code>, the <code>eval.py</code> script takes two optional arguments <code>-i N</code> and <code>-t S</code> which lets you configure the number <code>N</code> of times each benchmark is run in order to average the runtime and the timeout <code>S</code> in seconds per benchmark.
+				The default values are: one iteration and a timeout of three hours.
 			</p>
 			<div class="alert alert-warning">
-				We are aware of an issue where the <code>benchmark.py</code> and <code>reduced.py</code> scripts will report failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
+				We are aware of an issue where the <code>eval.py</code> script reports failure, however, running <kbd>plankton</kbd> directly in the shell results in successful verification.
 				The issue is due to Z3 spontaneously misbehaving when run with Python's <code>subprocess</code> module.
 				We believe that this triggers a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
+				<!-- <br> -->
+				(See <a href="#rawplankton">The <code>eval.py</code> Script</a> below for the exact invocations issued by <code>eval.py</code>.)
 			</div>
 
 			<p>
@@ -675,6 +719,44 @@
 				Besides the above, <code>--version</code> prints the tool's version, <code>-h</code> and <code>--help</code> print the full usage description.
 			</p>
 
+			<!-- ************************************* EVAL ************************************* -->
+			<h4 id="rawplankton">The <code>eval.py</code> Script</h4>
+			<p>
+				The <code>eval.py</code> script is know to fail spuriously on occasion due to a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a>.
+				Running <kbd>plankton</kbd> directly in the shell (of the docker image) alleviates this problem.
+				Below you find the sequence of <kbd>plankton</kbd> invocations issued by <code>eval.py</code> should you wish to reproduce them manually.
+			</p>
+			<p>
+				For <a href="#claim1">Claim 1</a> <code>eval.py</code> runs this:
+			</p>
+  		<pre class="bg-light border"><code class="bash">  ./plankton examples/LO_tree.pl --old
+  ./plankton examples/LO_tree.pl --new</code></pre>
+			<p>
+				For <a href="#claim1">Claim 2</a> <code>eval.py</code> runs this:
+			</p>
+  		<pre class="bg-light border"><code class="bash">  ./plankton examples/FineSet.pl --old
+  ./plankton examples/FineSet.pl --new
+  ./plankton examples/LazySet.pl --old
+  ./plankton examples/LazySet.pl --new
+  ./plankton examples/VechevYahavDCas.pl --loopNoPostJoin --old
+  ./plankton examples/VechevYahavDCas.pl --loopNoPostJoin --new
+  ./plankton examples/VechevYahavCas.pl --old
+  ./plankton examples/VechevYahavCas.pl --new
+  ./plankton examples/ORVYY.pl --old
+  ./plankton examples/ORVYY.pl --new
+  ./plankton examples/FemrsTreeNoMaintenance.pl --loopNoPostJoin --old
+  ./plankton examples/FemrsTreeNoMaintenance.pl --loopNoPostJoin --new
+  ./plankton examples/Michael.pl --loopNoPostJoin --old
+  ./plankton examples/Michael.pl --loopNoPostJoin --new
+  ./plankton examples/MichaelWaitFreeSearch.pl --loopNoPostJoin --old
+  ./plankton examples/MichaelWaitFreeSearch.pl --loopNoPostJoin --new
+  ./plankton examples/Harris.pl --future --old
+  ./plankton examples/Harris.pl --future --new
+  ./plankton examples/HarrisWaitFreeSearch.pl --future --old
+  ./plankton examples/HarrisWaitFreeSearch.pl --future --new</code></pre>
+
+
+			<!-- ************************************* INPUT ************************************ -->
 			<h4>Input Programs</h4>
 			<p>
 				<kbd>plankton</kbd> supports a simple C-style input language.

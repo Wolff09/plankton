@@ -12,9 +12,9 @@ import re
 # CONFIGURATION begin
 #
 
-TIMEOUT = 60 * 60 * 6  # in seconds
+TIMEOUT = 60 * 60 * 3  # in seconds
 
-EXECUTABLE = "build/bin/plankton"
+EXECUTABLE = "./plankton"
 BENCHMARKS = {  # path: (reduced, [flags])
     "examples/FineSet.pl": (False, []),
     "examples/LazySet.pl": (True, []),
@@ -152,7 +152,7 @@ def run_with_timeout_to_file(path, flags, mode, file):
             if process.returncode == 0:
                 output = "".join(file.readlines())
             else:
-                print(">> ".join(file.readlines()[-10:]))
+                # print(">> ".join(file.readlines()[-10:]))
                 output = "__fail__"  # TODO: allow error message extraction
         except TimeoutExpired:
             os.killpg(process.pid, signal.SIGINT)
@@ -302,11 +302,11 @@ if __name__ == '__main__':
         if args.time > 0:
             TIMEOUT = args.time
 
-    # try:
-    #     claim1()
-    # except KeyboardInterrupt:
-    #     print("", flush=True)
-    #     print("[interrupted]", flush=True)
+    try:
+        claim1()
+    except KeyboardInterrupt:
+        print("", flush=True)
+        print("[interrupted]", flush=True)
 
     print()
     print()
