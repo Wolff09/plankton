@@ -13,29 +13,19 @@ import re
 #
 
 TIMEOUT = 60 * 60 * 6  # in seconds
-REPETITIONS = 1
 
-EXECUTABLE = "./plankton"
-BENCHMARKS = {}
-FULL = {  # path: [flags]
-    "examples/FineSet.pl": [],
-    "examples/LazySet.pl": [],
-    "examples/VechevYahavDCas.pl": ["--loopNoPostJoin"],
-    "examples/VechevYahavCas.pl": [],
-    "examples/ORVYY.pl": [],
-    "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
-    "examples/Michael.pl": ["--loopNoPostJoin"],
-    "examples/MichaelWaitFreeSearch.pl": [],
-    "examples/Harris.pl": ["--future"],
-    "examples/HarrisWaitFreeSearch.pl": ["--future"],
-}
-REDUCED = {  # path: [flags]
-    "examples/FineSet.pl": [],
-    "examples/LazySet.pl": [],
-    "examples/VechevYahavCas.pl": [],
-    "examples/ORVYY.pl": [],
-    "examples/FemrsTreeNoMaintenance.pl": ["--loopNoPostJoin"],
-    "examples/MichaelWaitFreeSearch.pl": [],
+EXECUTABLE = "build/bin/plankton"
+BENCHMARKS = {  # path: (reduced, [flags])
+    "examples/FineSet.pl": (False, []),
+    "examples/LazySet.pl": (True, []),
+    "examples/VechevYahavDCas.pl": (False, ["--loopNoPostJoin"]),
+    "examples/VechevYahavCas.pl": (True, []),
+    "examples/ORVYY.pl": (True, []),
+    "examples/FemrsTreeNoMaintenance.pl": (True, ["--loopNoPostJoin"]),
+    "examples/Michael.pl": (False, ["--loopNoPostJoin"]),
+    "examples/MichaelWaitFreeSearch.pl": (True, ["--loopNoPostJoin"]),
+    "examples/Harris.pl": (False, ["--future"]),
+    "examples/HarrisWaitFreeSearch.pl": (False, ["--future"]),
 }
 LOTREE = ("examples/LO_tree.pl", [])
 STARTED = False
@@ -162,6 +152,7 @@ def run_with_timeout_to_file(path, flags, mode, file):
             if process.returncode == 0:
                 output = "".join(file.readlines())
             else:
+                print(">> ".join(file.readlines()[-10:]))
                 output = "__fail__"  # TODO: allow error message extraction
         except TimeoutExpired:
             os.killpg(process.pid, signal.SIGINT)
@@ -172,14 +163,14 @@ def run_with_timeout_to_file(path, flags, mode, file):
 def run_with_timeout(path, mode):
     if path not in BENCHMARKS:
         raise NameError("Internal error: could not find benchmark file '" + path + "'")
-    flags = BENCHMARKS.get(path)
+    flags = BENCHMARKS[path][1]
 
     with NamedTemporaryFile(mode='r', delete=True) as tmp:
         return run_with_timeout_to_file(path, flags, mode, tmp)
 
 
-def run_test(path, i, mode):
-    print("[{:0>2}/{:0>2}] Running {} {}  ".format(i+1, REPETITIONS, mode, path), flush=True, end="")
+def run_test(path, i, iters, mode):
+    print("[{:0>2}/{:0>2}] Running {} {}  ".format(i+1, iters, mode, path), flush=True, end="")
     output = run_with_timeout(path, mode)
     result = extract_info(output)
     if result.success:
@@ -189,12 +180,12 @@ def run_test(path, i, mode):
     return result
 
 
-def run_test_old(path, i):
-    return run_test(path, i, "--old")
+def run_test_old(path, i, iters):
+    return run_test(path, i, iters, "--old")
 
 
-def run_test_new(path, i):
-    return run_test(path, i, "--new")
+def run_test_new(path, i, iters):
+    return run_test(path, i, iters, "--new")
 
 
 def get_values(path, precise_past):
@@ -211,7 +202,7 @@ def fmt(string, width, formatter=default):
     return formatter(result)
 
 
-def finalize():
+def finalize(reduced):
     print()
     print()
     width = max([len(x) for x in BENCHMARKS]) + 3
@@ -220,6 +211,8 @@ def finalize():
     print(("-" * width) + "--+----------+-----------------+--------")
     some_failed = False
     for path in BENCHMARKS:
+        if reduced and not BENCHMARKS[path][0]:
+            continue
         good_old, total_old = get_values(path, False)
         good_new, total_new = get_values(path, True)
         if not good_old or not good_new:
@@ -280,55 +273,46 @@ def claim1():
     print("Expected result for '--new' analysis: {}. Actual result: {}".format(new_expected, new_actual))
 
 
-def claim2():
+def claim2(reduced, iterations):
     print("CLAIM 2: comparison of '--old' and '--new'")
     print("==========================================")
     print()
-    if BENCHMARKS == FULL:
-        print("Running " + bold("full") + " benchmark set...")
-    else:
-        print("Running " + bold("reduced") + " benchmark set...")
+    print("Running {} benchmark set...".format(bold("reduced" if reduced else "full")))
     print()
-    print("Settings: iterations={0}, timeout={1}".format(REPETITIONS, human_readable(TIMEOUT*1000)))
-    for i in range(REPETITIONS):
+    print("Settings: iterations={0}, timeout={1}".format(iterations, human_readable(TIMEOUT*1000)))
+    for i in range(iterations):
         for path in BENCHMARKS:
-            result_old = run_test_old(path, i)
+            if reduced and not BENCHMARKS[path][0]:
+                continue
+            result_old = run_test_old(path, i, iterations)
             RESULTS[(path, "old")] = RESULTS.get((path, "old"), []) + [result_old]
-            result_new = run_test_new(path, i)
+            result_new = run_test_new(path, i, iterations)
             RESULTS[(path, "new")] = RESULTS.get((path, "new"), []) + [result_new]
-    finalize()
+    finalize(reduced)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("-i", type=int, dest="iter")
+    parser.add_argument("-i", type=int, dest="iter", default=1)
     parser.add_argument("-t", type=int, dest="time")
-    parser.add_argument("--reduced", action='store_const', const=True, dest="reduced")
+    parser.add_argument("--reduced", action='store_const', const=True, dest="reduced", default=False)
 
     args = parser.parse_args()
-    if args.iter:
-        if args.iter > 1:
-            REPETITIONS = args.iter
     if args.time:
         if args.time > 0:
             TIMEOUT = args.time
 
-    if args.reduced:
-        BENCHMARKS = REDUCED
-    else:
-        BENCHMARKS = FULL
-
-    try:
-        claim1()
-    except KeyboardInterrupt:
-        print("", flush=True)
-        print("[interrupted]", flush=True)
+    # try:
+    #     claim1()
+    # except KeyboardInterrupt:
+    #     print("", flush=True)
+    #     print("[interrupted]", flush=True)
 
     print()
     print()
     try:
-        claim2()
+        claim2(args.reduced, args.iter)
     except KeyboardInterrupt:
         print("", flush=True)
         print("[interrupted]", flush=True)
-        finalize()
+        finalize(args.reduced)
