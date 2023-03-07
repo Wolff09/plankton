@@ -163,7 +163,7 @@
 			</p>
 			<p class="lead text-justify mb-2">
 				<strong>Artifact Repository.</strong>
-				<a href="https://zenodo.org/record/7686111">https://zenodo.org/record/7686111</a>
+				<a href="https://zenodo.org/record/7703214">https://zenodo.org/record/7703214</a>
 			</p>
 		</div>
 		<br>
@@ -187,25 +187,25 @@
 			<!-- ******************************** REPO STRUCTURE ******************************** -->
 			<h4>Repository Structure</h4>
 			<p>
-				The <a href="https://zenodo.org/record/7686111">Zenodo repository</a> for this artifact is structured as follows:
+				The <a href="https://zenodo.org/record/7703214">Zenodo repository</a> for this artifact is structured as follows:
 			</p>
 			<pre class="bg-light border files">
-  https://zenodo.org/record/7686111
-  ├── plankton_arm64.tar    # prebuilt docker image
-  ├── plankton_x86-64.tar   # prebuilt docker image
-  ├── plankton.zip          # source files + docker build script
-  └── README.html           # this document</pre>
+  https://zenodo.org/record/7703214
+  ├── plankton_arm64.tar.xz    # prebuilt docker image
+  ├── plankton_x86-64.tar.xz   # prebuilt docker image
+  ├── plankton.zip             # source files + docker build script
+  └── README.pdf               # this document</pre>
 			<p>
 				You do not need to download the entire repository!
 				See your preferred method of installation below for more details.
 			</p>
 			<p>
 				The MD5 checksums for the installation files are:
-			<pre class="bg-light border files">
-  MD5 (plankton_arm64.tar)  = ????
-  MD5 (plankton_x86-64.tar) = ????
-  MD5 (plankton.zip)        = ????</pre>
 			</p>
+			<pre class="bg-light border files">
+  MD5 (plankton_arm64.tar.xz)  = 2512c7f9f04e519ca858302b23c905f9
+  MD5 (plankton_x86-64.tar.xz) = d9bd3ab26d07693392c33772c0905ad2
+  MD5 (plankton.zip)           = 9e3afb803592e09819120ec3c2a16a3e</pre>
 
 			<!-- ********************************* DOCKER IMAGE ********************************* -->
 			<h4>Install Option 1: Docker image (x86-64, arm64)</h4>
@@ -214,7 +214,7 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar</code> that fits your hardware from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar.xz</code> that fits your hardware from the <a href="https://zenodo.org/record/7703214">Zenodo repository</a>.
 					We provide images for <strong>arm64</strong> (this includes Apple Silicon) and <strong>x86-64</strong>; for other hardware architectures, you need to <a href="#dbuild">build the Docker image yourself.</a>
 					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties.
 					
@@ -224,7 +224,7 @@
 				</li>
 				<li>
 					Load the downloaded image into Docker:
-					<pre class="bg-light border"><code class="bash">  docker load -i path/to/plankton_&lt;your_arch&gt;.tar</code></pre>
+					<pre class="bg-light border"><code class="bash">  docker load -i path/to/plankton_&lt;your_arch&gt;.tar.xz</code></pre>
 				</li>
 				<li>
 					Done! <a href="#chkinstall">Check the installation</a> now.
@@ -238,7 +238,7 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download the source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+					Download the source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7703214">Zenodo repository</a>.
 				</li>
 				<li>
 					Unzip <code>plankton.zip</code>.
@@ -638,7 +638,7 @@
 
 			<h5>Compilation</h5>
 			<p>
-				To build the project, download the source code <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7686111">Zenodo repository</a>.
+				To build the project, download the source code <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7703214">Zenodo repository</a>.
 				Then, do the following
 			</p>
 			<pre class="bg-light border"><code class="bash">  cd path/to/plankton.zip
