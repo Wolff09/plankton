@@ -765,6 +765,23 @@
   ./plankton examples/Harris.pl --future --new
   ./plankton examples/HarrisWaitFreeSearch.pl --future --old
   ./plankton examples/HarrisWaitFreeSearch.pl --future --new</code></pre>
+  		<p>
+  			To simplify the comparison of running times and/or verification results for individual benchmarks, we recommend to have <kbd>plankton</kbd> write its output to a log file and then compare these log files.
+  			From within the artifact, you can do so by running this single shell instruction:
+  		</p>
+  		<pre class="bg-light border"><code class="bash" style="white-space: pre-wrap;">  ./plankton &lt;file&gt; [&lt;options&gt;] --old -o log_old.txt; ./plankton &lt;file&gt; [&lt;options&gt;] --new -o log_new.txt; tail log_old.txt; tail log_new.txt</code></pre>
+  		<p>
+  			The <code>&lt;file&gt;</code> is the benchmark you wish to analyze, i.e., one from the <code>examples/</code> folder.
+  			For the optional <code>&lt;options&gt;</code> refer to the above lists to see what options <code>eval.py</code> uses.
+  			Deviating from (in particular omitting) the options that <code>eval.py</code> uses may lead to verification failure although verification is possible (with other options).
+  		</p>
+  		<p>
+  			Also note that the use of <code>tail</code> on the produced log files will print only the last lines in the files.
+  			These lines typically contain the verification verdict (in the case of success) or an error message (in the case verification failed).
+  			To get more information, inspect the entire log files using, e.g., <code>cat</code>, <code>tail</code>, or <code>nano</code> (all of these are already installed in the artifact).
+  			You need to compare the factor between the <code>--old</code> and <code>--new</code> running times yourself when following this approach.
+  		</p>
+
 
 			<!-- *********************************** Z3 ISSUES ********************************** -->
 			<h4 id="z3issues">Known Issues</h4>
