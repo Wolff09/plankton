@@ -798,7 +798,7 @@
   			To simplify the comparison of running times and/or verification results for individual benchmarks, we recommend to have <kbd>plankton</kbd> write its output to a log file and then compare these log files.
   			From within the artifact, you can do so by running this single shell instruction:
   		</p>
-  		<pre class="bg-light border"><code class="bash" style="white-space: pre-wrap;">  ./plankton &lt;file&gt; [&lt;options&gt;] --old -o log_old.txt; ./plankton &lt;file&gt; [&lt;options&gt;] --new -o log_new.txt; tail log_old.txt; tail log_new.txt</code></pre>
+  		<pre class="bg-light border"><code class="bash" style="white-space: pre-wrap;">  ./plankton &lt;file&gt; [&lt;options&gt;] --old -o log_old.txt; ./plankton &lt;file&gt; [&lt;options&gt;] --new -o log_new.txt; <span class="print">&nbsp;&nbsp;&nbsp;</span> <span class="print">&nbsp;&nbsp;</span>tail log_old.txt; tail log_new.txt</code></pre>
   		<p>
   			The <code>&lt;file&gt;</code> is the benchmark you wish to analyze, i.e., one from the <code>examples/</code> folder.
   			For the optional <code>&lt;options&gt;</code> refer to the above lists to see what options <code>eval.py</code> uses.
