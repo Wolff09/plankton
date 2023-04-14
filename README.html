@@ -144,15 +144,32 @@
 		<!-- ********************************************************************************** -->
 		<!-- ************************************** PAPER ************************************* -->
 		<!-- ********************************************************************************** -->
-		<div class="jumbotron">
+		<div class="jumbotron" style="padding: 2rem;">
 			<h1 style="font-size: 2.75rem;">
 				Embedding Hindsight Reasoning <br class="print">in Separation Logic
 			</h1>
 			<h3>
 				<small>
-					ANONYMOUS AUTHOR(S)
+					<a target="new" href="https://www.tcs.cs.tu-bs.de/group/meyer/home.html">Roland Meyer</a>,
+					TU Braunschweig, Germany
+				</small>
+				<br>
+				<small>
+					<a target="new" href="https://cs.nyu.edu/~wies/">Thomas Wies</a>,
+					New York University, USA
+				</small>
+				<br>
+				<small>
+					<a target="new" href="https://wolff09.github.io">Sebastian Wolff</a>,
+					New York University, USA
 				</small>
 			</h3>
+			<h4 style="border:none;">
+				<small>
+					<!-- Presented at <a target="new" href="#">...</a>. -->
+					Accepted for <a target="new" href="https://pldi23.sigplan.org">PLDI'23</a>.
+				</small>
+			</h4>
 			<p class="lead text-justify mb-2">
 				<strong>Paper Abstract.</strong>
 				Automatically proving linearizability of concurrent data structures remains a key challenge for verification. We present temporal interpolation as a new proof principle to guide automated proof search using hindsight arguments within concurrent separation logic. Temporal interpolation offers an easy-to-automate alternative to prophecy variables and has the advantage of structuring proofs into easy-to-discharge hypotheses. Additionally, we advance hindsight theory by integrating it into a program logic, bringing formal rigor and complementary proof machinery. We substantiate the usefulness of temporal interpolation by implementing it in a tool and using it to automatically verify the Logical Ordering tree. The proof is challenging due to future-dependent linearization points and complex structure overlays. It is the first formal proof of this data structure. Interestingly, our formalization revealed an unknown bug and an existing informal proof as erroneous.
@@ -161,9 +178,18 @@
 				<strong>Artifact Abstract.</strong>
 				We use our implementation, an extension of the <kbd>plankton</kbd> tool, to (1) automatically verify the Logical Ordering tree, and (2) compare our extension with the original version of <kbd>plankton</kbd> in terms of performance and proof capabilities.
 			</p>
-			<p class="lead text-justify mb-2">
-				<strong>Artifact Repository.</strong>
-				<a href="https://zenodo.org/record/7786995">https://zenodo.org/record/7786995</a>
+			<p class="lead mb-2">
+				<strong>Artifact Repository (PLDI'23 version):</strong>
+				<a href="https://zenodo.org/record/7829982">https://zenodo.org/record/7829982</a>
+				<br>
+				<strong>Artifact Repository (latest version):</strong>
+				<a href="https://zenodo.org/record/7686110">https://zenodo.org/record/7686110</a>
+				<br>
+				<strong>GitHub Repository:</strong>
+				<a href="https://wolff09.github.io/plankton/">https://wolff09.github.io/plankton/</a>
+				<br>
+				<strong>Paper:</strong>
+				<a href="https://doi.org/10.1145/3591296">https://doi.org/10.1145/3591296</a>
 			</p>
 		</div>
 		<br class="noprint">
@@ -184,10 +210,10 @@
 			<!-- ******************************** REPO STRUCTURE ******************************** -->
 			<h4>Repository Structure</h4>
 			<p>
-				The <a href="https://zenodo.org/record/7786995">Zenodo repository</a> for this artifact is structured as follows:
+				The <a href="https://zenodo.org/record/7829982">Zenodo repository</a> for this artifact is structured as follows:
 			</p>
 			<pre class="bg-light border files">
-  https://zenodo.org/record/7786995
+  https://zenodo.org/record/7829982
   ├── plankton_arm64.tar.xz    # prebuilt docker image
   ├── plankton_x86-64.tar.xz   # prebuilt docker image
   ├── plankton.zip             # source files + docker build script
@@ -211,7 +237,7 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar.xz</code> that fits your hardware from the <a href="https://zenodo.org/record/7786995">Zenodo repository</a>.
+					Download the Docker image <code>plankton_&lt;your_arch&gt;.tar.xz</code> that fits your hardware from the <a href="https://zenodo.org/record/7829982">Zenodo repository</a>.
 					We provide images for <strong>arm64</strong> (this includes Apple Silicon) and <strong>x86-64</strong>; for other hardware architectures, you need to <a href="#dbuild">build the Docker image yourself.</a>
 					Beware that choosing the wrong architecture results in Docker <i>emulating</i> the artifact: this renders the artifact functional, but comes with substantial performance penalties.
 					
@@ -235,7 +261,7 @@
 					Install <a href="https://www.docker.com/">Docker</a>.
 				</li>
 				<li>
-					Download the source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7786995">Zenodo repository</a>.
+					Download the source files <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7829982">Zenodo repository</a>.
 				</li>
 				<li>
 					Unzip <code>plankton.zip</code>.
@@ -308,7 +334,7 @@
 			<p>
 				The folder <code>/artifact/plankton-debug/</code> is a mirror of <code>/artifact/plankton/</code> but was compiled with debug flags.
 				This makes the output much more verbose compared to the release version in <code>/artifact/plankton/</code>.
-				The debug version, for instance, will print separation logic assertion for the pre and post conditions for every proof step.
+				The debug version, for instance, will print separation logic assertions for the pre and post conditions for every proof step.
 				The folder <code>/artifact/z3/</code> contains the source and build files for <strong>Z3</strong> (<a target="new" href="https://github.com/Z3Prover/z3/releases/tag/z3-4.8.7">v4.8.7</a>).
 			</p>
 		</div>
@@ -357,12 +383,16 @@
 			<pre class="bg-light border"><code class="bash">  python3 eval.py</code></pre>
 			<p>To reproduce <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a> with the <span class="badge reduced">reduced</span> benchmark set, do:</p>
 			<pre class="bg-light border"><code class="bash">  python3 eval.py --reduced</code></pre>
-			<p class="noprint">
+			<!-- <p>To reproduce <a href="#claim1">Claim 1</a> and <a href="#claim2">Claim 2</a> with the <span class="badge full">full</span>/<span class="badge reduced">reduced</span> benchmark set, do:</p>
+			<pre class="bg-light border"><code class="bash">  python3 eval.py
+  python3 eval.py --reduced</code></pre> -->
+			<!-- <p>
 				The next sections explain the output generated by the <code>eval.py</code> script.
-			</p>
+			</p> -->
 
 			<div class="alert alert-warning">
-				We are aware of a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a> that causes <kbd>plankton</kbd> to fail verification spontaneously.
+				<!-- We are aware of a <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a> that causes <kbd>plankton</kbd> to fail verification spontaneously. -->
+				A <a href="https://github.com/Z3Prover/z3/issues/5179">known bug in Z3</a> may cause <kbd>plankton</kbd> to fail verification spontaneously.
 				See <a href="#z3issues">Known Issues</a> should you run into problems.
 			</div>
 
@@ -411,7 +441,6 @@
   &lt;...&gt;
   [iter-2] Fixed-point reached.
   Proof generation was successful!
-  &lt;...&gt;
   
   #
   # Verdict for '"Logical Ordering Tree (most general tree overlay)"':
@@ -634,7 +663,7 @@
 
 			<h5>Compilation</h5>
 			<p>
-				To build the project, download the source code <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7786995">Zenodo repository</a>.
+				To build the project, download the source code <code>plankton.zip</code> from the <a href="https://zenodo.org/record/7829982">Zenodo repository</a>.
 				Then, do the following
 			</p>
 			<pre class="bg-light border"><code class="bash">  cd path/to/plankton.zip
